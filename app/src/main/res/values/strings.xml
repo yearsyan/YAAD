@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">YAAD</string>
+    <string name="net_error">网络错误</string>
+    <string name="download_fail">下载错误</string>
+    <string name="missing_dep">环境不完整</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="repair_all">全部修复</string>
+</resources>
