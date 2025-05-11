@@ -314,11 +314,7 @@ class HttpDownloadSession(
                                         }
                                     } else if (
                                         !supportsRange
-                                    ) { // Fallback for single part non-mmap (should not happen if
-                                        // mmap is primary for non-chunked)
-                                        // This case needs a proper FileOutputStream for the single
-                                        // part if mmap is not used.
-                                        // For now, assuming mmap is used if ptr is available.
+                                    ) {
                                         println(
                                             "Warning: ptr is 0, cannot write with mmap for part $index"
                                         )
@@ -334,7 +330,6 @@ class HttpDownloadSession(
                             if (isActive) {
                                 val errorMsg =
                                     "Error downloading part $index (${part.start}-${part.end}): ${e.message}"
-                                println(errorMsg)
                                 controlMutex.withLock {
                                     currentErrorMessage =
                                         currentErrorMessage ?: errorMsg
@@ -452,7 +447,7 @@ class HttpDownloadSession(
             ) {
                 controlMutex.withLock {
                     saveCheckpoint()
-                    updateThreadSpeed() // Final save and speed update
+                    updateThreadSpeed()
                 }
             }
         }
@@ -510,8 +505,7 @@ class HttpDownloadSession(
                                     ),
                                     null
                                 )
-                            // For chunked download, speed calculation might be simpler or global
-                            updateThreadSpeed() // Update speed for the single "part"
+                            updateThreadSpeed()
                         }
                     }
                 }
@@ -550,7 +544,7 @@ class HttpDownloadSession(
     private fun updateStateOnJobsExit() {
         val currentParts =
             checkpoint?.parts
-                ?: return // checkpoint read under controlMutex by caller
+                ?: return
         currentParts.forEach { part ->
             part.speed = 0.0
             part.lastKeyDownLoad = part.downloaded
@@ -655,7 +649,7 @@ class HttpDownloadSession(
             partsInfoCopy,
             totalSpeedAllParts,
             currentState,
-            currentErrorMessage ?: "" // Provide current error message
+            currentErrorMessage ?: ""
         )
     }
 
@@ -667,7 +661,7 @@ class HttpDownloadSession(
             if (supportsRange && checkpoint != null) {
                 controlMutex.withLock {
                     saveCheckpoint()
-                    updateThreadSpeed() // Update speed before saving paused state
+                    updateThreadSpeed()
                     downloadListeners.forEach { it.onPause() }
                 }
             }
@@ -677,16 +671,16 @@ class HttpDownloadSession(
     override suspend fun resume() {
         if (currentState == DownloadState.PAUSED) {
             isPaused = false
-            currentErrorMessage = null // Clear previous error on resume
+            currentErrorMessage = null
             currentState = DownloadState.DOWNLOADING
             downloadListeners.forEach { it.onResume(path) }
         }
     }
 
-    override suspend fun stop() { // Return a Job representing the stop operation
+    override suspend fun stop() {
         if (currentState != DownloadState.STOPPED) {
             isPaused = false
-            isStopped = true // Set before cancelling to allow loops to exit
+            isStopped = true
             val previousState = currentState
             currentState = DownloadState.STOPPED
             println("Download stopping procedures initiated...")
@@ -848,7 +842,6 @@ class HttpDownloadSession(
         }
     }
 
-    // add remove download listener
     override fun addDownloadListener(listener: IDownloadListener) {
         downloadListeners.add(listener)
     }
