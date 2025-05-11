@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.chaquopy)
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -20,6 +21,9 @@ android {
 
         python {
             version "3.13"
+            pip {
+                install "requests"
+            }
         }
         ndk {
             abiFilters  "arm64-v8a", "x86_64"
@@ -53,10 +57,14 @@ dependencies {
     implementation platform(libs.androidx.compose.bom)
     implementation libs.androidx.ui
     implementation libs.androidx.ui.graphics
+    implementation libs.androidx.material.icons.core
+    implementation libs.androidx.material.icons.extended
     implementation libs.androidx.material3
     implementation libs.dialogx
     implementation libs.okhttp
     implementation libs.mmkv
+    implementation libs.kotlinx.serialization.json
+    implementation project(':downloader-core')
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

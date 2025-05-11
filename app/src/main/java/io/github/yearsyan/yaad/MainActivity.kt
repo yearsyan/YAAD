@@ -13,17 +13,17 @@ import com.kongzue.dialogx.interfaces.OnBindView
 import io.github.yearsyan.yaad.ui.components.EnvDoctorResult
 import io.github.yearsyan.yaad.ui.components.FixDialog
 import io.github.yearsyan.yaad.ui.screens.MainScreen
+import io.github.yearsyan.yaad.utils.GithubUtil
+import io.github.yearsyan.yaad.utils.YouGetUtil
 import io.github.yearsyan.yaad.utils.YtDlpUtil
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        lifecycleScope.launch(Dispatchers.IO) {
-            checkDependence()
-        }
+//        lifecycleScope.launch(Dispatchers.IO) {
+//            checkDependence()
+//        }
         setContent {
             MainScreen(lifecycleScope = lifecycleScope)
         }
@@ -31,7 +31,8 @@ class MainActivity : ComponentActivity() {
 
     private suspend fun checkDependence() {
         val ytDlpExist = YtDlpUtil.isYtDlpExists(this)
-        if (!ytDlpExist) {
+        val youGetExist = YouGetUtil.isYouGetExists(this)
+        if (!ytDlpExist || !youGetExist) {
             MessageDialog.build()
                 .setTitle(R.string.missing_dep)
                 .setCustomView(
@@ -40,7 +41,8 @@ class MainActivity : ComponentActivity() {
                             val composeView = view.findViewById<ComposeView>(R.id.compose_view)
                             composeView.setContent {
                                 EnvDoctorResult(
-                                    ytDlpExist = ytDlpExist
+                                    ytDlpExist = ytDlpExist,
+                                    youGetExist = youGetExist
                                 )
                             }
                         }
@@ -50,7 +52,8 @@ class MainActivity : ComponentActivity() {
                 .setCancelButton(R.string.cancel)
                 .setOkButtonClickListener({ d,v ->
                     repair(
-                        fixYtDlp = !ytDlpExist
+                        fixYtDlp = !ytDlpExist,
+                        fixYouGet = !youGetExist,
                     )
                     return@setOkButtonClickListener false
                 })
@@ -58,19 +61,19 @@ class MainActivity : ComponentActivity() {
         } else {
             val latestVersion = YtDlpUtil.getLatestVersion() ?: return
             val currentVersion = YtDlpUtil.getCurrentVersion(this)
-            if (YtDlpUtil.compareVersions(latestVersion, currentVersion) > 0) {
+            if (GithubUtil.compareVersions(latestVersion, currentVersion) > 0) {
                 showUpdateYtDlpDialog()
             }
         }
     }
 
-    private fun repair(fixYtDlp: Boolean) {
+    private fun repair(fixYtDlp: Boolean, fixYouGet: Boolean) {
         BottomDialog.build()
             .setCustomView(object : OnBindView<BottomDialog>(R.layout.layout_compose) {
                 override fun onBind(dialog: BottomDialog, view: View) {
                     val composeView = view.findViewById<ComposeView>(R.id.compose_view)
                     composeView.setContent {
-                        FixDialog(dialog, fixYtDlp, lifecycleScope)
+                        FixDialog(dialog, fixYtDlp, fixYouGet, lifecycleScope)
                     }
                 }
             })

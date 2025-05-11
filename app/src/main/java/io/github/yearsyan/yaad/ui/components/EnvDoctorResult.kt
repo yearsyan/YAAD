@@ -26,10 +26,11 @@ suspend fun handleYtDlpResult(context: Context) {
 }
 
 @Composable
-fun EnvDoctorResult(ytDlpExist: Boolean) {
+fun EnvDoctorResult(ytDlpExist: Boolean, youGetExist: Boolean) {
     Column (
         modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 0.dp)
     ) {
         Text("yt-dlp：$ytDlpExist")
+        Text("you-get: $youGetExist")
     }
 }

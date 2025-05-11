@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "YAAD"
 include ':app'
+include ':downloader-core'
