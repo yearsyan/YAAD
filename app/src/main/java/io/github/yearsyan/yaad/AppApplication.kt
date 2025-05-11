@@ -16,7 +16,7 @@ class AppApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        DialogX.init(this);
+        DialogX.init(this)
         DialogX.globalStyle = MaterialStyle.style()
         DialogX.globalTheme = DialogX.THEME.AUTO
         if (!Python.isStarted()) {

@@ -1,24 +1,26 @@
 package io.github.yearsyan.yaad.utils
 
 import android.content.Context
+import java.io.File
+import java.io.IOException
+import java.util.regex.Pattern
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okio.buffer
 import okio.sink
-import java.io.File
-import java.io.IOException
-import java.util.regex.Pattern
 
 object YouGetUtil {
     const val YT_GET_FILE_NAME = "you-get.zip"
     private const val GITHUB_REPO = "yt-dlp/yt-dlp"
-    private const val RELEASE_URL = "https://github.com/yearsyan/you-get-zipimport/releases/latest"
+    private const val RELEASE_URL =
+        "https://github.com/yearsyan/you-get-zipimport/releases/latest"
     private val client = OkHttpClient()
-    private val versionPattern = Pattern.compile("tag/(\\d{4}\\.\\d{2}\\.\\d{2})")
-    private const val DOWNLOAD_URL_TEMPLATE = "https://github.com/${GITHUB_REPO}/releases/download/%s/you-get.zip"
-
+    private val versionPattern =
+        Pattern.compile("tag/(\\d{4}\\.\\d{2}\\.\\d{2})")
+    private const val DOWNLOAD_URL_TEMPLATE =
+        "https://github.com/${GITHUB_REPO}/releases/download/%s/you-get.zip"
 
     fun isYouGetExists(context: Context): Boolean {
         val file = File(context.filesDir, YT_GET_FILE_NAME)
@@ -26,9 +28,7 @@ object YouGetUtil {
     }
 
     fun getLatestVersion(): String? {
-        val request = Request.Builder()
-            .url(RELEASE_URL)
-            .build()
+        val request = Request.Builder().url(RELEASE_URL).build()
 
         return try {
             client.newCall(request).execute().use { response ->
@@ -47,13 +47,15 @@ object YouGetUtil {
         }
     }
 
-    suspend fun downloadVersion(context: Context, version: String, downloadCb: (Float) -> Unit = {}): Boolean {
+    suspend fun downloadVersion(
+        context: Context,
+        version: String,
+        downloadCb: (Float) -> Unit = {}
+    ): Boolean {
         val downloadUrl = String.format(DOWNLOAD_URL_TEMPLATE, version)
         val outputFile = File(context.filesDir, YT_GET_FILE_NAME)
 
-        val request = Request.Builder()
-            .url(downloadUrl)
-            .build()
+        val request = Request.Builder().url(downloadUrl).build()
 
         return try {
 

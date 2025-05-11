@@ -2,7 +2,7 @@ package io.github.yearsyan.yaad.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.runtime.Composable
@@ -28,24 +28,28 @@ fun MultiThreadProgressBar(
     val indicatorColor = ProgressIndicatorDefaults.linearColor
 
     Canvas(
-        modifier = modifier
-            .fillMaxWidth()
-            .background(backgroundColor, shape = RoundedCornerShape(radius))
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .background(backgroundColor, shape = RoundedCornerShape(radius))
     ) {
         val widthPerByte = size.width / total
         val radiusPx = radius.toPx()
-        val path = Path().apply {
-            addRoundRect(
-                RoundRect(
-                    rect = Rect(Offset.Zero, size),
-                    cornerRadius = CornerRadius(radiusPx, radiusPx)
+        val path =
+            Path().apply {
+                addRoundRect(
+                    RoundRect(
+                        rect = Rect(Offset.Zero, size),
+                        cornerRadius = CornerRadius(radiusPx, radiusPx)
+                    )
                 )
-            )
-        }
+            }
 
         clipPath(path) {
             status.parts.forEach { part ->
-                val startX = ((part.start - status.parts.minOf { it.start }) * widthPerByte)
+                val startX =
+                    ((part.start - status.parts.minOf { it.start }) *
+                        widthPerByte)
                 val downloadedWidth = (part.downloaded * widthPerByte)
 
                 drawRoundRect(
@@ -57,4 +61,3 @@ fun MultiThreadProgressBar(
         }
     }
 }
-

@@ -6,4 +6,30 @@
     <string name="confirm">确定</string>
     <string name="cancel">取消</string>
     <string name="repair_all">全部修复</string>
+
+    <string name="download_percentage_format">%.1f%%</string>
+    <string name="download_size_progress">%1$s / %2$s</string> <string name="download_speed_format">速度: %1$s</string> <string name="download_etr_format">剩余时间: %1$s</string> <string name="status_content_description_format">状态: %1$s</string> <string name="button_pause">暂停</string>
+    <string name="button_stop">停止</string>
+    <string name="button_resume">继续</string>
+    <string name="button_start">开始</string>
+    <string name="button_remove">移除</string>
+    <string name="button_open">打开</string>
+    <string name="button_clear">清除</string>
+    <string name="button_retry">重试</string>
+
+    <string name="bytes_zero">0 B</string>
+    <string name="speed_zero">0 B/s</string>
+
+    <string name="etr_hours_suffix">小时</string>
+    <string name="etr_minutes_suffix">分钟</string>
+    <string name="etr_seconds_suffix">秒</string>
+    <string name="etr_less_than_one_second">&lt; 1秒</string> <string name="status_pending">等待中…</string>
+    <string name="status_downloading">下载中</string>
+    <string name="status_paused">已暂停</string>
+    <string name="status_stopped">已停止</string>
+    <string name="status_completed">已完成</string>
+    <string name="status_error_format">错误: %1$s</string>
+    <string name="status_validating">校验中…</string>
+    <string name="status_error_unknown">未知错误</string>
+
 </resources>

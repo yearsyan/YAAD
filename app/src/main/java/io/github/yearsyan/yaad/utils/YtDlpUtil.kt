@@ -3,6 +3,9 @@ package io.github.yearsyan.yaad.utils
 import android.content.Context
 import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
+import java.io.File
+import java.io.IOException
+import java.util.regex.Pattern
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -10,19 +13,19 @@ import okhttp3.Request
 import okio.buffer
 import okio.sink
 import okio.source
-import java.io.File
-import java.io.IOException
-import java.util.regex.Pattern
 
 object YtDlpUtil {
 
     const val YT_DLP_FILE_NAME = "yt-dlp.zip"
     private const val GITHUB_REPO = "yt-dlp/yt-dlp"
-    private const val RELEASE_URL = "https://github.com/$GITHUB_REPO/releases/latest"
-    private const val DOWNLOAD_URL_TEMPLATE = "https://github.com/$GITHUB_REPO/releases/download/%s/yt-dlp"
+    private const val RELEASE_URL =
+        "https://github.com/$GITHUB_REPO/releases/latest"
+    private const val DOWNLOAD_URL_TEMPLATE =
+        "https://github.com/$GITHUB_REPO/releases/download/%s/yt-dlp"
 
     private val client = OkHttpClient()
-    private val versionPattern = Pattern.compile("tag/(\\d{4}\\.\\d{2}\\.\\d{2})")
+    private val versionPattern =
+        Pattern.compile("tag/(\\d{4}\\.\\d{2}\\.\\d{2})")
 
     fun callYtDlp(context: Context, args: Array<String>): String {
         if (!Python.isStarted()) {
@@ -35,13 +38,9 @@ object YtDlpUtil {
         return pyRes.toString()
     }
 
-    /**
-     * Gets the latest version number.
-     */
+    /** Gets the latest version number. */
     fun getLatestVersion(): String? {
-        val request = Request.Builder()
-            .url(RELEASE_URL)
-            .build()
+        val request = Request.Builder().url(RELEASE_URL).build()
 
         return try {
             client.newCall(request).execute().use { response ->
@@ -64,17 +63,17 @@ object YtDlpUtil {
         return callYtDlp(context, arrayOf("--version")).trim()
     }
 
-    /**
-     * Downloads the specified version of yt-dlp and processes it.
-     */
-    suspend fun downloadVersion(context: Context, version: String, downloadCb: (Float) -> Unit = {}): Boolean {
+    /** Downloads the specified version of yt-dlp and processes it. */
+    suspend fun downloadVersion(
+        context: Context,
+        version: String,
+        downloadCb: (Float) -> Unit = {}
+    ): Boolean {
         val downloadUrl = String.format(DOWNLOAD_URL_TEMPLATE, version)
         val tempFile = File(context.cacheDir, "yt-dlp_temp")
         val outputFile = File(context.filesDir, YT_DLP_FILE_NAME)
 
-        val request = Request.Builder()
-            .url(downloadUrl)
-            .build()
+        val request = Request.Builder().url(downloadUrl).build()
 
         return try {
 
@@ -112,7 +111,6 @@ object YtDlpUtil {
                 return false
             }
 
-
             tempFile.delete()
 
             true
@@ -122,21 +120,23 @@ object YtDlpUtil {
         }
     }
 
-    /**
-     * Checks if yt-dlp.zip exists.
-     */
+    /** Checks if yt-dlp.zip exists. */
     fun isYtDlpExists(context: Context): Boolean {
         val file = File(context.filesDir, YT_DLP_FILE_NAME)
         return file.exists()
     }
 
-    private fun processFileLikeTail(inputFile: File, outputFile: File): Boolean {
+    private fun processFileLikeTail(
+        inputFile: File,
+        outputFile: File
+    ): Boolean {
         return try {
             inputFile.source().buffer().use { source ->
                 outputFile.sink().buffer().use { sink ->
-                    source.indexOf('\n'.code.toByte()).takeIf { it != -1L }?.let {
-                        source.skip(it + 1)
-                    }
+                    source
+                        .indexOf('\n'.code.toByte())
+                        .takeIf { it != -1L }
+                        ?.let { source.skip(it + 1) }
                     sink.writeAll(source)
                 }
             }
@@ -146,5 +146,4 @@ object YtDlpUtil {
             false
         }
     }
-
 }

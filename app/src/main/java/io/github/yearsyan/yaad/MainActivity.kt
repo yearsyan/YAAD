@@ -21,12 +21,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-//        lifecycleScope.launch(Dispatchers.IO) {
-//            checkDependence()
-//        }
-        setContent {
-            MainScreen(lifecycleScope = lifecycleScope)
-        }
+        setContent { MainScreen(lifecycleScope = lifecycleScope) }
     }
 
     private suspend fun checkDependence() {
@@ -36,9 +31,11 @@ class MainActivity : ComponentActivity() {
             MessageDialog.build()
                 .setTitle(R.string.missing_dep)
                 .setCustomView(
-                    object : OnBindView<MessageDialog>(R.layout.layout_compose) {
+                    object :
+                        OnBindView<MessageDialog>(R.layout.layout_compose) {
                         override fun onBind(dialog: MessageDialog, view: View) {
-                            val composeView = view.findViewById<ComposeView>(R.id.compose_view)
+                            val composeView: ComposeView =
+                                view.findViewById(R.id.compose_view)
                             composeView.setContent {
                                 EnvDoctorResult(
                                     ytDlpExist = ytDlpExist,
@@ -50,7 +47,7 @@ class MainActivity : ComponentActivity() {
                 )
                 .setOkButton(R.string.repair_all)
                 .setCancelButton(R.string.cancel)
-                .setOkButtonClickListener({ d,v ->
+                .setOkButtonClickListener({ d, v ->
                     repair(
                         fixYtDlp = !ytDlpExist,
                         fixYouGet = !youGetExist,
@@ -69,14 +66,22 @@ class MainActivity : ComponentActivity() {
 
     private fun repair(fixYtDlp: Boolean, fixYouGet: Boolean) {
         BottomDialog.build()
-            .setCustomView(object : OnBindView<BottomDialog>(R.layout.layout_compose) {
-                override fun onBind(dialog: BottomDialog, view: View) {
-                    val composeView = view.findViewById<ComposeView>(R.id.compose_view)
-                    composeView.setContent {
-                        FixDialog(dialog, fixYtDlp, fixYouGet, lifecycleScope)
+            .setCustomView(
+                object : OnBindView<BottomDialog>(R.layout.layout_compose) {
+                    override fun onBind(dialog: BottomDialog, view: View) {
+                        val composeView: ComposeView =
+                            view.findViewById(R.id.compose_view)
+                        composeView.setContent {
+                            FixDialog(
+                                dialog,
+                                fixYtDlp,
+                                fixYouGet,
+                                lifecycleScope
+                            )
+                        }
                     }
                 }
-            })
+            )
             .setCancelable(false)
             .show(this)
     }
@@ -85,5 +90,3 @@ class MainActivity : ComponentActivity() {
         // TODO: show update dialog
     }
 }
-
-

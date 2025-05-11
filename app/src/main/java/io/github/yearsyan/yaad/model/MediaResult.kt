@@ -1,5 +1,6 @@
 package io.github.yearsyan.yaad.model
-import kotlinx.serialization.*
+
+import kotlinx.serialization.Serializable
 
 @Serializable
 data class MediaResult(
@@ -13,6 +14,6 @@ data class MediaItem(
     val headers: Map<String, String>,
     val url: String,
     val ext: String,
-    val format_id: String,
+    val formatId: String,
     val format: String
 )

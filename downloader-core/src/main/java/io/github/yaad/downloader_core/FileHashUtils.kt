@@ -1,4 +1,5 @@
 package io.github.yaad.downloader_core
+
 import java.io.File
 import java.io.FileInputStream
 import java.security.MessageDigest

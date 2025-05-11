@@ -5,7 +5,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-
 object AssetUtil {
 
     fun copyAssetIfNeeded(context: Context, fileName: String): Boolean {
