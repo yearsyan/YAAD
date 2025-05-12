@@ -23,6 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".services.ExtractorService"
+            android:process=":extractor"
+            android:exported="false" />
     </application>
 
 </manifest>

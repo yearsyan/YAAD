@@ -49,3 +49,4 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 chaquopy = { id = "com.chaquo.python", version.ref="chaquopy" }
 spotless = { id = "com.diffplug.spotless", version.ref="spotless"}
+kotlin-parcelize = { id = "org.jetbrains.kotlin.plugin.parcelize", version.ref = "kotlin" }

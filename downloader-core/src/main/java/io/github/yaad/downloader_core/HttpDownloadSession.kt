@@ -312,9 +312,7 @@ class HttpDownloadSession(
                                                 buffer[j]
                                             )
                                         }
-                                    } else if (
-                                        !supportsRange
-                                    ) {
+                                    } else if (!supportsRange) {
                                         println(
                                             "Warning: ptr is 0, cannot write with mmap for part $index"
                                         )
@@ -542,9 +540,7 @@ class HttpDownloadSession(
     }
 
     private fun updateStateOnJobsExit() {
-        val currentParts =
-            checkpoint?.parts
-                ?: return
+        val currentParts = checkpoint?.parts ?: return
         currentParts.forEach { part ->
             part.speed = 0.0
             part.lastKeyDownLoad = part.downloaded
