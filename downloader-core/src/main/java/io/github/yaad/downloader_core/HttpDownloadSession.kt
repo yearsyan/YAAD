@@ -395,7 +395,7 @@ class HttpDownloadSession(
                     }
 
                     if (currentState == DownloadState.COMPLETED) {
-                        downloadListeners.forEach { it.onComplete() }
+                        downloadListeners.forEach { it.onComplete(this) }
                     }
                 } else if (!isStopped) {
                     currentState = DownloadState.ERROR
@@ -605,7 +605,7 @@ class HttpDownloadSession(
             }
         }
         if (downloadListeners.isNotEmpty()) {
-            downloadListeners.forEach { it.onProgress() }
+            downloadListeners.forEach { it.onProgress(this) }
         }
     }
 
@@ -658,7 +658,7 @@ class HttpDownloadSession(
                 controlMutex.withLock {
                     saveCheckpoint()
                     updateThreadSpeed()
-                    downloadListeners.forEach { it.onPause() }
+                    downloadListeners.forEach { it.onPause(this) }
                 }
             }
         }
@@ -669,7 +669,7 @@ class HttpDownloadSession(
             isPaused = false
             currentErrorMessage = null
             currentState = DownloadState.DOWNLOADING
-            downloadListeners.forEach { it.onResume(path) }
+            downloadListeners.forEach { it.onResume(this,path) }
         }
     }
 
@@ -844,5 +844,9 @@ class HttpDownloadSession(
 
     override fun removeDownloadListener(listener: IDownloadListener) {
         downloadListeners.remove(listener)
+    }
+
+    fun recoverFilePath(): String {
+        return metaFile.absolutePath
     }
 }

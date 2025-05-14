@@ -1,13 +1,13 @@
 package io.github.yaad.downloader_core
 
 interface IDownloadListener {
-    fun onComplete() {}
+    fun onComplete(session: IDownloadSession) {}
 
-    fun onPause() {}
+    fun onPause(session: IDownloadSession) {}
 
-    fun onResume(savePath: String) {}
+    fun onResume(session: IDownloadSession, savePath: String) {}
 
-    fun onError(reason: Exception) {}
+    fun onError(session: IDownloadSession, reason: Exception) {}
 
-    fun onProgress() {}
+    fun onProgress(session: IDownloadSession) {}
 }

@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.style.MaterialStyle
+import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.services.ExtractorClient
 import io.github.yearsyan.yaad.utils.AssetUtil
 import io.github.yearsyan.yaad.utils.YtDlpUtil.YT_DLP_FILE_NAME
@@ -28,6 +29,7 @@ class AppApplication : Application() {
         initZip()
         ExtractorClient.initialize(this)
         ExtractorClient.getInstance().connect()
+        DownloadManager.initByApplication(this)
     }
 
     @OptIn(DelicateCoroutinesApi::class)
