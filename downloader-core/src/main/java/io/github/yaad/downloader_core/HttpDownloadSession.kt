@@ -26,6 +26,7 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import android.webkit.WebSettings
 
 @Serializable
 data class ThreadPartInfo(
@@ -83,6 +84,25 @@ class HttpDownloadSession(
                 .writeTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build()
+
+        private val defaultHeaders = mapOf(
+            "User-Agent" to getSystemUserAgent()
+        )
+
+        private fun getSystemUserAgent(): String {
+            return try {
+                // 尝试在主线程获取WebView的UserAgent
+                WebSettings.getDefaultUserAgent(getAppContext())
+            } catch (e: Exception) {
+                "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36"
+            }
+        }
+
+        private fun normalizeHeaderKey(key: String): String {
+            return key.split("-").joinToString("-") { word ->
+                word.lowercase().replaceFirstChar { it.uppercase() }
+            }
+        }
     }
 
     private val metaFile = File("$path.meta")
@@ -95,8 +115,19 @@ class HttpDownloadSession(
     private var totalFileSize: Long = 0
     private var serverEtag: String? = null
 
+    private val mergedHeaders: Map<String, String> = run {
+        val normalizedHeaders = headers.mapKeys { (key, _) -> normalizeHeaderKey(key) }
+        val normalizedDefaults = defaultHeaders.mapKeys { (key, _) -> normalizeHeaderKey(key) }
+        normalizedDefaults + normalizedHeaders
+    }
+
     override val total: Long
         get() = totalFileSize
+
+    val fileName: String
+        get() {
+            return getFileName(url, "unknown")
+        }
 
     @Volatile private var isPaused = false
     @Volatile private var isStopped = false
@@ -109,7 +140,7 @@ class HttpDownloadSession(
     private var progressReporterJob: Job? = null
     private val downloadListeners: HashSet<IDownloadListener> = HashSet()
 
-    override suspend fun start() {
+    override suspend fun start(starResultListener: (e: Exception?) -> Unit) {
         if (
             currentState == DownloadState.DOWNLOADING ||
                 currentState == DownloadState.VALIDATING
@@ -131,7 +162,8 @@ class HttpDownloadSession(
                 currentState = DownloadState.ERROR
                 currentErrorMessage =
                     "Failed to create file: $path. ${e.message}"
-                throw IOException(currentErrorMessage, e)
+                starResultListener(IOException(currentErrorMessage, e))
+                return
             }
         }
 
@@ -141,7 +173,8 @@ class HttpDownloadSession(
         } catch (e: Exception) {
             currentState = DownloadState.ERROR
             currentErrorMessage = "Failed to get server file info: ${e.message}"
-            throw RuntimeException(currentErrorMessage, e)
+            starResultListener(RuntimeException(currentErrorMessage, e))
+            return
         }
 
         totalFileSize = serverInfo.fileSize
@@ -196,7 +229,8 @@ class HttpDownloadSession(
                 ?: run {
                     currentState = DownloadState.ERROR
                     currentErrorMessage = "Checkpoint could not be initialized."
-                    throw IllegalStateException(currentErrorMessage)
+                    starResultListener(IllegalStateException(currentErrorMessage))
+                    return@start
                 }
 
         currentState = DownloadState.DOWNLOADING
@@ -258,7 +292,7 @@ class HttpDownloadSession(
                                 "bytes=$startOffset-${part.end}"
                             )
                         }
-                        headers.forEach { (k, v) -> reqBuilder.addHeader(k, v) }
+                        mergedHeaders.forEach { (k, v) -> reqBuilder.addHeader(k, v) }
                         if (
                             supportsRange &&
                                 part.downloaded > 0 &&
@@ -272,75 +306,86 @@ class HttpDownloadSession(
 
                         val req = reqBuilder.build()
 
-                        try {
-                            client.newCall(req).execute().use { response ->
-                                if (!response.isSuccessful) {
-                                    val errorMsg =
-                                        "HTTP error: ${response.code} for part $index (range $startOffset-${part.end}). ETag used: ${currentCheckpoint.etag}"
-                                    println(errorMsg)
-                                    controlMutex.withLock {
-                                        currentErrorMessage =
-                                            currentErrorMessage ?: errorMsg
+                        var retryCount = 0
+                        var lastError: IOException? = null
+                        
+                        while (retryCount < 3 && isActive) {
+                            try {
+                                client.newCall(req).execute().use { response ->
+                                    if (!response.isSuccessful) {
+                                        val errorMsg =
+                                            "HTTP error: ${response.code} for part $index (range $startOffset-${part.end}). ETag used: ${currentCheckpoint.etag}"
+                                        println(errorMsg)
+                                        throw IOException(errorMsg)
                                     }
-                                    throw IOException(errorMsg)
-                                }
-                                val body =
-                                    response.body
-                                        ?: throw IOException(
-                                            "No response body for part $index (range $startOffset-${part.end})"
-                                        )
-                                val inputStream = body.byteStream()
-                                val buffer = ByteArray(65536)
-                                var mmapWriteOffset = startOffset
+                                    val body =
+                                        response.body
+                                            ?: throw IOException(
+                                                "No response body for part $index (range $startOffset-${part.end})"
+                                            )
+                                    val inputStream = body.byteStream()
+                                    val buffer = ByteArray(65536)
+                                    var mmapWriteOffset = startOffset
 
-                                while (isActive) {
-                                    while (isPaused && isActive) {
-                                        delay(200)
-                                    }
-                                    if (isStopped || !isActive) break
+                                    while (isActive) {
+                                        while (isPaused && isActive) {
+                                            delay(200)
+                                        }
+                                        if (isStopped || !isActive) break
 
-                                    val read = inputStream.read(buffer)
-                                    if (read == -1) break
+                                        val read = inputStream.read(buffer)
+                                        if (read == -1) break
 
-                                    if (
-                                        ptr != 0L
-                                    ) { // Ensure mmap pointer is valid
-                                        for (j in 0 until read) {
-                                            NativeBridge.writeByte(
-                                                ptr,
-                                                mmapWriteOffset + j,
-                                                buffer[j]
+                                        if (
+                                            ptr != 0L
+                                        ) { // Ensure mmap pointer is valid
+                                            for (j in 0 until read) {
+                                                NativeBridge.writeByte(
+                                                    ptr,
+                                                    mmapWriteOffset + j,
+                                                    buffer[j]
+                                                )
+                                            }
+                                        } else if (!supportsRange) {
+                                            println(
+                                                "Warning: ptr is 0, cannot write with mmap for part $index"
                                             )
                                         }
-                                    } else if (!supportsRange) {
-                                        println(
-                                            "Warning: ptr is 0, cannot write with mmap for part $index"
-                                        )
-                                    }
 
-                                    mmapWriteOffset += read
-                                    controlMutex.withLock {
-                                        part.downloaded += read
+                                        mmapWriteOffset += read
+                                        controlMutex.withLock {
+                                            part.downloaded += read
+                                        }
                                     }
                                 }
-                            }
-                        } catch (e: IOException) {
-                            if (isActive) {
-                                val errorMsg =
-                                    "Error downloading part $index (${part.start}-${part.end}): ${e.message}"
-                                controlMutex.withLock {
-                                    currentErrorMessage =
-                                        currentErrorMessage ?: errorMsg
+                                // 如果成功完成，跳出重试循环
+                                break
+                            } catch (e: IOException) {
+                                lastError = e
+                                retryCount++
+                                if (retryCount < 3) {
+                                    println("Retry attempt $retryCount for part $index after error: ${e.message}")
+                                    delay(1000) // 重试前等待1秒
                                 }
-                                throw e
+                            } catch (e: CancellationException) {
+                                println("Part $index download cancelled.")
+                                break
                             }
-                        } catch (e: CancellationException) {
-                            println("Part $index download cancelled.")
-                            // Don't rethrow cancellation, let the job complete as cancelled.
+                        }
+
+                        // 如果所有重试都失败了
+                        if (retryCount == 3 && lastError != null) {
+                            val errorMsg =
+                                "${lastError.message}"
+                            controlMutex.withLock {
+                                currentErrorMessage =
+                                    currentErrorMessage ?: errorMsg
+                            }
                         }
                     }
                 }
 
+            starResultListener(null)
             downloadJobs.joinAll()
 
             if (
@@ -460,7 +505,7 @@ class HttpDownloadSession(
             val request =
                 Request.Builder()
                     .url(url)
-                    .apply { headers.forEach { (k, v) -> addHeader(k, v) } }
+                    .apply { mergedHeaders.forEach { (k, v) -> addHeader(k, v) } }
                     .build()
 
             client.newCall(request).execute().use { response ->
@@ -669,7 +714,7 @@ class HttpDownloadSession(
             isPaused = false
             currentErrorMessage = null
             currentState = DownloadState.DOWNLOADING
-            downloadListeners.forEach { it.onResume(this,path) }
+            downloadListeners.forEach { it.onResume(this, path) }
         }
     }
 
@@ -743,7 +788,7 @@ class HttpDownloadSession(
         targetUrl: String
     ): ServerFileInfo {
         val reqBuilder = Request.Builder().url(targetUrl).head()
-        headers.forEach { (k, v) -> reqBuilder.addHeader(k, v) }
+        mergedHeaders.forEach { (k, v) -> reqBuilder.addHeader(k, v) }
         val request = reqBuilder.build()
 
         client.newCall(request).execute().use { response ->

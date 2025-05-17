@@ -71,7 +71,7 @@ fun DownloadCard(
 
             val listener =
                 object : IDownloadListener {
-                    override fun onProgress() {
+                    override fun onProgress(session: IDownloadSession) {
                         val status = downloadSession.getStatus()
                         this@produceState.launch(Dispatchers.Main) {
                             value = status

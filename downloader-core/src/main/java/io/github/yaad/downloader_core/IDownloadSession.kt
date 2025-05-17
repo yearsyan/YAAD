@@ -5,7 +5,7 @@ interface IDownloadSession {
 
     fun getStatus(): DownloadStatus
 
-    suspend fun start()
+    suspend fun start(starResultListener: (e: Exception?) -> Unit = {})
 
     suspend fun pause()
 

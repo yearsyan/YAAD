@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.lifecycle.LifecycleCoroutineScope
+import io.github.yearsyan.yaad.downloader.DownloadViewModel
 import io.github.yearsyan.yaad.ui.theme.YAADTheme
 
 data class BottomNavItem(
@@ -64,8 +65,8 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 when (selectedIndex) {
-                    0 -> InputScreen()
-                    1 -> TasksScreen()
+                    0 -> InputScreen(lifecycleScope)
+                    1 -> TasksScreen(lifecycleScope, DownloadViewModel())
                     2 -> SettingsScreen()
                 }
             }

@@ -24,7 +24,7 @@ class AppApplication : Application() {
 
     private fun initForMainProcess() {
         DialogX.init(this)
-        DialogX.globalStyle = MaterialStyle.style()
+        DialogX.globalStyle = MaterialStyle()
         DialogX.globalTheme = DialogX.THEME.AUTO
         initZip()
         ExtractorClient.initialize(this)
