@@ -1,5 +1,6 @@
 package io.github.yaad.downloader_core
 
+import android.webkit.WebSettings
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -26,7 +27,6 @@ import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import android.webkit.WebSettings
 
 @Serializable
 data class ThreadPartInfo(
@@ -85,9 +85,7 @@ class HttpDownloadSession(
                 .readTimeout(30, TimeUnit.SECONDS)
                 .build()
 
-        private val defaultHeaders = mapOf(
-            "User-Agent" to getSystemUserAgent()
-        )
+        private val defaultHeaders = mapOf("User-Agent" to getSystemUserAgent())
 
         private fun getSystemUserAgent(): String {
             return try {
@@ -116,8 +114,10 @@ class HttpDownloadSession(
     private var serverEtag: String? = null
 
     private val mergedHeaders: Map<String, String> = run {
-        val normalizedHeaders = headers.mapKeys { (key, _) -> normalizeHeaderKey(key) }
-        val normalizedDefaults = defaultHeaders.mapKeys { (key, _) -> normalizeHeaderKey(key) }
+        val normalizedHeaders =
+            headers.mapKeys { (key, _) -> normalizeHeaderKey(key) }
+        val normalizedDefaults =
+            defaultHeaders.mapKeys { (key, _) -> normalizeHeaderKey(key) }
         normalizedDefaults + normalizedHeaders
     }
 
@@ -229,7 +229,9 @@ class HttpDownloadSession(
                 ?: run {
                     currentState = DownloadState.ERROR
                     currentErrorMessage = "Checkpoint could not be initialized."
-                    starResultListener(IllegalStateException(currentErrorMessage))
+                    starResultListener(
+                        IllegalStateException(currentErrorMessage)
+                    )
                     return@start
                 }
 
@@ -292,7 +294,9 @@ class HttpDownloadSession(
                                 "bytes=$startOffset-${part.end}"
                             )
                         }
-                        mergedHeaders.forEach { (k, v) -> reqBuilder.addHeader(k, v) }
+                        mergedHeaders.forEach { (k, v) ->
+                            reqBuilder.addHeader(k, v)
+                        }
                         if (
                             supportsRange &&
                                 part.downloaded > 0 &&
@@ -308,7 +312,7 @@ class HttpDownloadSession(
 
                         var retryCount = 0
                         var lastError: IOException? = null
-                        
+
                         while (retryCount < 3 && isActive) {
                             try {
                                 client.newCall(req).execute().use { response ->
@@ -364,7 +368,9 @@ class HttpDownloadSession(
                                 lastError = e
                                 retryCount++
                                 if (retryCount < 3) {
-                                    println("Retry attempt $retryCount for part $index after error: ${e.message}")
+                                    println(
+                                        "Retry attempt $retryCount for part $index after error: ${e.message}"
+                                    )
                                     delay(1000) // 重试前等待1秒
                                 }
                             } catch (e: CancellationException) {
@@ -375,8 +381,7 @@ class HttpDownloadSession(
 
                         // 如果所有重试都失败了
                         if (retryCount == 3 && lastError != null) {
-                            val errorMsg =
-                                "${lastError.message}"
+                            val errorMsg = "${lastError.message}"
                             controlMutex.withLock {
                                 currentErrorMessage =
                                     currentErrorMessage ?: errorMsg
@@ -505,7 +510,9 @@ class HttpDownloadSession(
             val request =
                 Request.Builder()
                     .url(url)
-                    .apply { mergedHeaders.forEach { (k, v) -> addHeader(k, v) } }
+                    .apply {
+                        mergedHeaders.forEach { (k, v) -> addHeader(k, v) }
+                    }
                     .build()
 
             client.newCall(request).execute().use { response ->

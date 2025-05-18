@@ -1,5 +1,7 @@
 package io.github.yearsyan.yaad.ui.screens
 
+import android.util.Log
+import android.view.View
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,14 +27,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kongzue.dialogx.dialogs.BottomDialog
 import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.dialogs.PopTip
+import com.kongzue.dialogx.interfaces.OnBindView
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadManager
+import io.github.yearsyan.yaad.services.ExtractorClient
+import io.github.yearsyan.yaad.ui.components.VideoInfoView
 import io.github.yearsyan.yaad.utils.ClipboardUtil
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -43,11 +50,37 @@ fun InputScreen(scope: CoroutineScope) {
     var urlText by remember { mutableStateOf("") }
     var analyzing by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val downloadWithLink: (text: String) -> Unit = downloadWithLink@{
-        if (
-            it.startsWith("http://") ||
-            it.startsWith("https://")
-        ) {
+    val downloadWithLink: (text: String) -> Unit = downloadWithLink@{ it ->
+        if (it.contains("bilibili")) {
+            scope.launch {
+                val resp =
+                    ExtractorClient.getInstance().extractMedia(it, emptyMap())
+                resp?.result?.let { result ->
+                    Log.d("result", result.toString())
+                    BottomDialog.show(
+                        "Result",
+                        object :
+                            OnBindView<BottomDialog?>(R.layout.layout_compose) {
+                            override fun onBind(
+                                dialog: BottomDialog?,
+                                v: View
+                            ) {
+                                val composeView =
+                                    v.findViewById<ComposeView>(
+                                        R.id.compose_view
+                                    )
+                                composeView.setContent {
+                                    VideoInfoView(result, { dialog?.dismiss() })
+                                }
+                            }
+                        }
+                    )
+                }
+            }
+
+            return@downloadWithLink
+        }
+        if (it.startsWith("http://") || it.startsWith("https://")) {
             if (analyzing) {
                 return@downloadWithLink
             }
@@ -58,16 +91,21 @@ fun InputScreen(scope: CoroutineScope) {
                 startResultListener = { e ->
                     scope.launch {
                         e?.let {
-                            PopNotification.show(context.getString(R.string.task_add_fail) + it.message)
-                        } ?: run {
-                            PopNotification
-                                .build()
-                                .setMessage(R.string.task_add_success)
-                                .setOnPopNotificationClickListener { dialog, v ->
-                                    true
-                                }
-                            PopNotification.show(R.string.task_add_success)
+                            PopNotification.show(
+                                context.getString(R.string.task_add_fail) +
+                                    it.message
+                            )
                         }
+                            ?: run {
+                                PopNotification.build()
+                                    .setMessage(R.string.task_add_success)
+                                    .setOnPopNotificationClickListener {
+                                        dialog,
+                                        v ->
+                                        true
+                                    }
+                                PopNotification.show(R.string.task_add_success)
+                            }
                         analyzing = false
                     }
                 }
@@ -118,9 +156,7 @@ fun InputScreen(scope: CoroutineScope) {
             }
 
             FloatingActionButton(
-                onClick = {
-                    downloadWithLink(urlText)
-                },
+                onClick = { downloadWithLink(urlText) },
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
             ) {
                 if (analyzing) {
@@ -129,7 +165,10 @@ fun InputScreen(scope: CoroutineScope) {
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
-                    Icon(Icons.Outlined.Download, contentDescription = "Download")
+                    Icon(
+                        Icons.Outlined.Download,
+                        contentDescription = "Download"
+                    )
                 }
             }
         }

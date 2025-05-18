@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 @Parcelize
 @Serializable
 data class MediaResult(
-    val result: List<MediaItem>? = null,
+    val result: VideoInfo? = null,
     val code: Int,
     val msg: String
 ) : Parcelable

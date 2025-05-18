@@ -32,8 +32,14 @@ fun TasksScreen(scope: CoroutineScope, viewModel: DownloadViewModel) {
 }
 
 @Composable
-fun DownloadItem(scope: CoroutineScope, record: DownloadManager.DownloadSessionRecord) {
-    if (record is DownloadManager.SingleHttpDownloadSessionRecord && record.httpDownloadSession != null) {
+fun DownloadItem(
+    scope: CoroutineScope,
+    record: DownloadManager.DownloadSessionRecord
+) {
+    if (
+        record is DownloadManager.SingleHttpDownloadSessionRecord &&
+            record.httpDownloadSession != null
+    ) {
         val session = record.httpDownloadSession!!
         DownloadCard(
             scope = scope,
@@ -41,6 +47,6 @@ fun DownloadItem(scope: CoroutineScope, record: DownloadManager.DownloadSessionR
             fileName = session.fileName
         )
     } else {
-        Box {  }
+        Box {}
     }
 }

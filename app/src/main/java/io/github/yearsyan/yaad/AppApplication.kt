@@ -3,16 +3,18 @@ package io.github.yearsyan.yaad
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
+import android.util.Log
 import com.kongzue.dialogx.DialogX
+import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.style.MaterialStyle
 import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.services.ExtractorClient
-import io.github.yearsyan.yaad.utils.AssetUtil
-import io.github.yearsyan.yaad.utils.YtDlpUtil.YT_DLP_FILE_NAME
+import io.github.yearsyan.yaad.utils.RepoRelease
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class AppApplication : Application() {
     override fun onCreate() {
@@ -35,7 +37,29 @@ class AppApplication : Application() {
     @OptIn(DelicateCoroutinesApi::class)
     private fun initZip() {
         GlobalScope.launch(Dispatchers.IO) {
-            AssetUtil.copyAssetIfNeeded(this@AppApplication, YT_DLP_FILE_NAME)
+            try {
+                val youGetRepo =
+                    object : RepoRelease() {
+                        override val repo = "yearsyan/you-get-zipimport"
+                        override val assetFileName: String
+                            get() = "you-get.zip"
+                    }
+                if (!youGetRepo.exist(this@AppApplication)) {
+                    val version = youGetRepo.getLatestVersion() ?: return@launch
+                    val downloadTask =
+                        youGetRepo.downloadVersion(
+                            scope = GlobalScope,
+                            context = this@AppApplication,
+                            version = version
+                        )
+                    downloadTask.join()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    PopNotification.show(e.message)
+                }
+            }
         }
     }
 

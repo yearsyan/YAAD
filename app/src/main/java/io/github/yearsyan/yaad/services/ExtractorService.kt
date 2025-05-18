@@ -9,8 +9,13 @@ import com.chaquo.python.Python
 import com.chaquo.python.android.AndroidPlatform
 import io.github.yearsyan.yaad.IExtractorService
 import io.github.yearsyan.yaad.model.MediaResult
+import io.github.yearsyan.yaad.model.VideoInfo
+import java.io.File
+import kotlinx.serialization.json.Json
 
 class ExtractorService : Service() {
+
+    val json = Json { ignoreUnknownKeys = true }
 
     private val binder =
         object : IExtractorService.Stub() {
@@ -23,7 +28,16 @@ class ExtractorService : Service() {
                 if (callingPid == Process.myPid()) {
                     return MediaResult(code = -1, msg = "callingPid error")
                 }
-                return MediaResult(code = 0, msg = "")
+
+                val py = Python.getInstance()
+                val pyModule = py.getModule("you_get_extractor")
+                val absPath = File(filesDir, "you-get.zip").absolutePath
+                pyModule.callAttr("init_env", absPath)
+                val jsonStr =
+                    pyModule.callAttr("extract", absPath, url).toString()
+                val videoInfo = json.decodeFromString<VideoInfo>(jsonStr)
+
+                return MediaResult(code = 0, msg = "ok", result = videoInfo)
             }
         }
 
