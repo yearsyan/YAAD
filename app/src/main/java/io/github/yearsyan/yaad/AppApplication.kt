@@ -3,7 +3,6 @@ package io.github.yearsyan.yaad
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
-import android.util.Log
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.style.MaterialStyle

@@ -794,11 +794,18 @@ class HttpDownloadSession(
     private fun checkSupportForRangeAndGetInfo(
         targetUrl: String
     ): ServerFileInfo {
-        val reqBuilder = Request.Builder().url(targetUrl).head()
+        val reqBuilder = Request.Builder().url(targetUrl).get()
         mergedHeaders.forEach { (k, v) -> reqBuilder.addHeader(k, v) }
         val request = reqBuilder.build()
 
         client.newCall(request).execute().use { response ->
+
+            if (!response.isSuccessful) {
+                throw IOException(
+                    "HTTP Response code: ${response.code}"
+                )
+            }
+
             val rangeHeader = response.header("Accept-Ranges")?.lowercase()
             val currentEtag = response.header("ETag")
             val transferEncoding =
@@ -817,7 +824,7 @@ class HttpDownloadSession(
                 throw IOException(
                     "Failed to get Content-Length and not chunked."
                 )
-
+            response.close()
             return ServerFileInfo(
                 effectiveSupportsRange,
                 contentLength,

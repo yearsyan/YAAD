@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.kongzue.dialogx.dialogs.PopNotification
 import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.model.VideoInfo
+import io.github.yearsyan.yaad.utils.parseOriginFromReferer
 
 @Composable
 fun VideoInfoView(videoInfo: VideoInfo, finish: () -> Unit) {
@@ -73,7 +74,7 @@ fun VideoInfoView(videoInfo: VideoInfo, finish: () -> Unit) {
                         itemList.forEach { url ->
                             DownloadManager.addHttpDownloadTask(
                                 url,
-                                videoInfo.extra,
+                                videoInfo.requestHeaders,
                                 { PopNotification.show("下载开始") }
                             )
                         }

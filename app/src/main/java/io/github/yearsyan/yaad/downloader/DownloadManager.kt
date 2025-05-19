@@ -220,34 +220,34 @@ object DownloadManager : IDownloadListener {
     }
 
     private fun checkAndControlService() {
-        downloadScope.launch {
-            serviceControlMutex.withLock {
-                val shouldServiceRun = hasActiveTasks()
-                if (shouldServiceRun && !isServiceRunning) {
-                    val serviceIntent =
-                        Intent(context, DownloadForegroundService::class.java)
-                            .apply {
-                                action =
-                                    DownloadServiceConstants
-                                        .ACTION_START_FOREGROUND_SERVICE
-                            }
-                    ContextCompat.startForegroundService(context, serviceIntent)
-                    isServiceRunning = true
-                } else if (!shouldServiceRun && isServiceRunning) {
-                    val serviceIntent =
-                        Intent(context, DownloadForegroundService::class.java)
-                            .apply {
-                                action =
-                                    DownloadServiceConstants
-                                        .ACTION_STOP_FOREGROUND_SERVICE
-                            }
-                    context.stopService(
-                        serviceIntent
-                    ) // stopService is fine, it will call onDestroy in service
-                    isServiceRunning = false
-                }
-            }
-        }
+//        downloadScope.launch {
+//            serviceControlMutex.withLock {
+//                val shouldServiceRun = hasActiveTasks()
+//                if (shouldServiceRun && !isServiceRunning) {
+//                    val serviceIntent =
+//                        Intent(context, DownloadForegroundService::class.java)
+//                            .apply {
+//                                action =
+//                                    DownloadServiceConstants
+//                                        .ACTION_START_FOREGROUND_SERVICE
+//                            }
+//                    ContextCompat.startForegroundService(context, serviceIntent)
+//                    isServiceRunning = true
+//                } else if (!shouldServiceRun && isServiceRunning) {
+//                    val serviceIntent =
+//                        Intent(context, DownloadForegroundService::class.java)
+//                            .apply {
+//                                action =
+//                                    DownloadServiceConstants
+//                                        .ACTION_STOP_FOREGROUND_SERVICE
+//                            }
+//                    context.stopService(
+//                        serviceIntent
+//                    ) // stopService is fine, it will call onDestroy in service
+//                    isServiceRunning = false
+//                }
+//            }
+//        }
     }
 
     override fun onComplete(session: IDownloadSession) {
