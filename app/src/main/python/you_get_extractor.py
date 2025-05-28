@@ -38,7 +38,7 @@ def wrap_result(result: str) -> str:
         return result
 
 
-def extract(import_path: str, url: str):
+def extract(import_path: str, url: str, optionsStr: str):
     init_env(import_path)
     import you_get
     byte_buf = io.BytesIO()
@@ -46,8 +46,18 @@ def extract(import_path: str, url: str):
 
     old_stdout = sys.stdout
     sys.stdout = text_wrapper
+
+    options = json.loads(optionsStr)
+    if options is None:
+        options = {}
     
-    sys.argv = ['you-get', '--json',url]
+    new_args = ['you-get', '--json']
+    for k, v in options.items():
+        new_args.append(k)
+        new_args.append(v)
+
+    new_args.append(url)
+    sys.argv = new_args
     
     try:
         you_get.main()

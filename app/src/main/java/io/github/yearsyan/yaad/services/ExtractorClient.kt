@@ -101,7 +101,7 @@ private constructor(private val applicationContext: Context) {
 
     suspend fun extractMedia(
         url: String,
-        options: Map<Any?, Any?>?
+        options: Map<String, String>?
     ): MediaResult? {
         if (!isBound.get() || extractorService == null) {
             return null
@@ -115,7 +115,7 @@ private constructor(private val applicationContext: Context) {
                 )
                 extractorService?.extractDownloadMedia(
                     url,
-                    options?.toMutableMap()
+                    options
                 )
             } catch (e: RemoteException) {
                 Log.e(

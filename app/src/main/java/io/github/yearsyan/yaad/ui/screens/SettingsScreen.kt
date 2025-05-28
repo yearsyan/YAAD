@@ -1,9 +1,9 @@
 package io.github.yearsyan.yaad.ui.screens
 
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import io.github.yearsyan.yaad.ui.screens.settings.AdaptiveSettingsScreen
 
 @Composable
 fun SettingsScreen() {
-    Text("Settings Screen")
+    AdaptiveSettingsScreen()
 }

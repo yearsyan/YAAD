@@ -36,5 +36,7 @@
     <string name="noting">什么都没有～</string>
     <string name="task_add_success">下载任务添加成功</string>
     <string name="task_add_fail">下载任务添加失败：</string>
+    <string name="url_extracting">解析中</string>
+    <string name="extract_fail">解析失败</string>
 
 </resources>

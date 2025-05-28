@@ -1,5 +1,6 @@
 package io.github.yearsyan.yaad.ui.screens
 
+import android.content.Context
 import android.util.Log
 import android.view.View
 import androidx.compose.foundation.layout.Arrangement
@@ -35,14 +36,86 @@ import androidx.compose.ui.unit.sp
 import com.kongzue.dialogx.dialogs.BottomDialog
 import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.dialogs.PopTip
+import com.kongzue.dialogx.dialogs.WaitDialog
 import com.kongzue.dialogx.interfaces.OnBindView
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadManager
+import io.github.yearsyan.yaad.model.VideoInfo
 import io.github.yearsyan.yaad.services.ExtractorClient
 import io.github.yearsyan.yaad.ui.components.VideoInfoView
 import io.github.yearsyan.yaad.utils.ClipboardUtil
+import io.github.yearsyan.yaad.utils.SettingsManager
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+private fun showVideoInfo(src: String, videoInfo: VideoInfo) {
+    BottomDialog.show(
+        object :
+            OnBindView<BottomDialog?>(R.layout.layout_compose) {
+            override fun onBind(
+                dialog: BottomDialog?,
+                v: View
+            ) {
+                val composeView =
+                    v.findViewById<ComposeView>(
+                        R.id.compose_view
+                    )
+                composeView.setContent {
+                    VideoInfoView(src, videoInfo, { dialog?.dismiss() })
+                }
+            }
+        }
+    )
+}
+
+private suspend fun dealWithLink(context: Context, link: String) {
+    if (link.contains("bilibili")) {
+        withContext(Dispatchers.Main) {
+            WaitDialog.show(R.string.url_extracting)
+        }
+        try {
+            val options = mutableMapOf<String,String>()
+            SettingsManager.getInstance(context).getCurrentCookieFile()?.let {
+                options.put("--cookies", it.path)
+            }
+            val resp =
+                ExtractorClient.getInstance().extractMedia(link, options)
+            resp?.result?.let { result ->
+                withContext(Dispatchers.Main) {
+                    WaitDialog.dismiss()
+                    showVideoInfo(link, result)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            withContext(Dispatchers.Main) {
+                WaitDialog.dismiss()
+                PopNotification.show(R.string.extract_fail)
+            }
+        }
+        return
+    }
+    if (link.startsWith("http://") || link.startsWith("https://")) {
+        withContext(Dispatchers.Main) {
+            WaitDialog.show(R.string.url_extracting)
+        }
+        DownloadManager.addHttpDownloadTask(
+            url = link,
+            headers = emptyMap(),
+            startResultListener = { e ->
+                WaitDialog.dismiss()
+            }
+        )
+    } else if (link.startsWith("magnet:")) {
+        // TODO add bt download
+    } else if (link.isEmpty()) {
+        PopTip.show(R.string.url_empty)
+    } else {
+        PopTip.show(R.string.url_format_error)
+    }
+}
 
 @Composable
 fun InputScreen(scope: CoroutineScope) {
@@ -51,71 +124,12 @@ fun InputScreen(scope: CoroutineScope) {
     var analyzing by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val downloadWithLink: (text: String) -> Unit = downloadWithLink@{ it ->
-        if (it.contains("bilibili")) {
-            scope.launch {
-                val resp =
-                    ExtractorClient.getInstance().extractMedia(it, emptyMap())
-                resp?.result?.let { result ->
-                    Log.d("result", result.toString())
-                    BottomDialog.show(
-                        "Result",
-                        object :
-                            OnBindView<BottomDialog?>(R.layout.layout_compose) {
-                            override fun onBind(
-                                dialog: BottomDialog?,
-                                v: View
-                            ) {
-                                val composeView =
-                                    v.findViewById<ComposeView>(
-                                        R.id.compose_view
-                                    )
-                                composeView.setContent {
-                                    VideoInfoView(result, { dialog?.dismiss() })
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-
-            return@downloadWithLink
-        }
-        if (it.startsWith("http://") || it.startsWith("https://")) {
-            if (analyzing) {
-                return@downloadWithLink
-            }
+        scope.launch {
             analyzing = true
-            DownloadManager.addHttpDownloadTask(
-                url = it,
-                headers = emptyMap(),
-                startResultListener = { e ->
-                    scope.launch {
-                        e?.let {
-                            PopNotification.show(
-                                context.getString(R.string.task_add_fail) +
-                                    it.message
-                            )
-                        }
-                            ?: run {
-                                PopNotification.build()
-                                    .setMessage(R.string.task_add_success)
-                                    .setOnPopNotificationClickListener {
-                                        dialog,
-                                        v ->
-                                        true
-                                    }
-                                PopNotification.show(R.string.task_add_success)
-                            }
-                        analyzing = false
-                    }
-                }
-            )
-        } else if (it.startsWith("magnet:")) {
-            // TODO add bt download
-        } else if (it.isEmpty()) {
-            PopTip.show(R.string.url_empty)
-        } else {
-            PopTip.show(R.string.url_format_error)
+            withContext(Dispatchers.Default) {
+                dealWithLink(context, it)
+            }
+            analyzing = false
         }
     }
 

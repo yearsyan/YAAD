@@ -6,6 +6,7 @@ import android.content.Context
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.style.MaterialStyle
+import com.tencent.mmkv.MMKV
 import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.services.ExtractorClient
 import io.github.yearsyan.yaad.utils.RepoRelease
@@ -19,11 +20,15 @@ class AppApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         if (isMainProcess()) {
+            System.loadLibrary("media")
             initForMainProcess()
         }
     }
 
     private fun initForMainProcess() {
+        // 初始化MMKV
+        MMKV.initialize(this)
+        
         DialogX.init(this)
         DialogX.globalStyle = MaterialStyle()
         DialogX.globalTheme = DialogX.THEME.AUTO

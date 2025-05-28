@@ -1,8 +1,9 @@
 package io.github.yearsyan.yaad.ui.screens
 
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.SaveAlt
@@ -17,12 +18,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.lifecycle.LifecycleCoroutineScope
 import io.github.yearsyan.yaad.downloader.DownloadViewModel
 import io.github.yearsyan.yaad.ui.theme.YAADTheme
+import androidx.compose.runtime.key
 
 data class BottomNavItem(
     val label: String,
@@ -41,6 +51,7 @@ val bottomNavItems =
 fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
 
     var selectedIndex by remember { mutableIntStateOf(0) }
+    val downloadViewModel = remember { DownloadViewModel() }
 
     YAADTheme {
         Scaffold(
@@ -60,14 +71,36 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
                 }
             }
         ) { innerPadding ->
-            Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Box(
+                modifier = Modifier.fillMaxSize().padding(innerPadding)
             ) {
-                when (selectedIndex) {
-                    0 -> InputScreen(lifecycleScope)
-                    1 -> TasksScreen(lifecycleScope, DownloadViewModel())
-                    2 -> SettingsScreen()
+                // 使用 AnimatedVisibility - 优雅的动画切换，保持状态
+                
+                // InputScreen - index 0
+                AnimatedVisibility(
+                    visible = selectedIndex == 0,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    InputScreen(lifecycleScope)
+                }
+                
+                // TasksScreen - index 1
+                AnimatedVisibility(
+                    visible = selectedIndex == 1,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    TasksScreen(lifecycleScope, downloadViewModel)
+                }
+                
+                // SettingsScreen - index 2
+                AnimatedVisibility(
+                    visible = selectedIndex == 2,
+                    enter = fadeIn(),
+                    exit = fadeOut()
+                ) {
+                    SettingsScreen()
                 }
             }
         }
