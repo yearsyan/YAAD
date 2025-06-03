@@ -1,68 +1,65 @@
 #include <jni.h>
 #include <android/log.h>
-
-extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/avutil.h>
 #include <libavutil/mathematics.h>
 #include <libavutil/time.h>
-}
 
 #define LOG_TAG "FFmpegMerge"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
-#define LOGD(...) __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, __VA_ARGS__)
 
-// Helper function to throw Java exception
+/* Helper function to throw Java exception */
 void throwJavaException(JNIEnv *env, const char *message) {
-    jclass exceptionClass = env->FindClass("java/lang/RuntimeException");
-    if (exceptionClass != nullptr) {
-        env->ThrowNew(exceptionClass, message);
+    jclass exceptionClass = (*env)->FindClass(env, "java/lang/RuntimeException");
+    if (exceptionClass != NULL) {
+        (*env)->ThrowNew(env, exceptionClass, message);
     }
 }
 
-bool isVideoFile(AVFormatContext *ctx) {
-    for (unsigned int i = 0; i < ctx->nb_streams; i++) {
+int isVideoFile(AVFormatContext *ctx) {
+    unsigned int i;
+    for (i = 0; i < ctx->nb_streams; i++) {
         if (ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-            return true;
+            return 1;
         }
     }
-    return false;
+    return 0;
 }
 
 jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring out) {
-    const char *file1Path = env->GetStringUTFChars(file1, nullptr);
-    const char *file2Path = env->GetStringUTFChars(file2, nullptr);
-    const char *outputPath = env->GetStringUTFChars(out, nullptr);
+    const char *file1Path = (*env)->GetStringUTFChars(env, file1, NULL);
+    const char *file2Path = (*env)->GetStringUTFChars(env, file2, NULL);
+    const char *outputPath = (*env)->GetStringUTFChars(env, out, NULL);
 
     LOGI("Starting audio-video merge: %s + %s -> %s", file1Path, file2Path, outputPath);
 
-    AVFormatContext *ctx1 = nullptr;
-    AVFormatContext *ctx2 = nullptr;
-    AVFormatContext *outCtx = nullptr;
-    AVStream *videoStream = nullptr;
-    AVStream *audioStream = nullptr;
-    AVStream *inAudioStream = nullptr;
+    AVFormatContext *ctx1 = NULL;
+    AVFormatContext *ctx2 = NULL;
+    AVFormatContext *outCtx = NULL;
+    AVStream *videoStream = NULL;
+    AVStream *audioStream = NULL;
+    AVStream *inAudioStream = NULL;
     int videoStreamIndex = -1;
     int audioStreamIndex = -1;
     int64_t videoDuration = 0;
-    AVPacket *packet = nullptr;
+    AVPacket *packet = NULL;
     int64_t videoStartPts = AV_NOPTS_VALUE;
     int64_t audioStartPts = AV_NOPTS_VALUE;
     jint ret = 0;
 
-    // Open first file
-    int ret_code = avformat_open_input(&ctx1, file1Path, nullptr, nullptr);
+    /* Open first file */
+    int ret_code = avformat_open_input(&ctx1, file1Path, NULL, NULL);
     if (ret_code < 0) {
         char errbuf[AV_ERROR_MAX_STRING_SIZE];
         av_strerror(ret_code, errbuf, AV_ERROR_MAX_STRING_SIZE);
         LOGE("Failed to open first input file: %s, Error: %s", file1Path, errbuf);
         
-        // 尝试获取文件格式信息
+        /* Try to get file format information */
         AVProbeData probe_data = {0};
         probe_data.filename = file1Path;
-        probe_data.buf = nullptr;
+        probe_data.buf = NULL;
         probe_data.buf_size = 0;
         
         const AVInputFormat *fmt = av_probe_input_format(&probe_data, 1);
@@ -76,28 +73,28 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
         ret = -1;
         goto end;
     }
-    if (avformat_find_stream_info(ctx1, nullptr) < 0) {
+    if (avformat_find_stream_info(ctx1, NULL) < 0) {
         LOGE("Failed to find stream info for first file: %s", file1Path);
         throwJavaException(env, "Failed to find stream info for first file");
         ret = -2;
         goto end;
     }
 
-    // Open second file
-    if (avformat_open_input(&ctx2, file2Path, nullptr, nullptr) < 0) {
+    /* Open second file */
+    if (avformat_open_input(&ctx2, file2Path, NULL, NULL) < 0) {
         LOGE("Failed to open second input file: %s", file2Path);
         throwJavaException(env, "Failed to open second input file");
         ret = -3;
         goto end;
     }
-    if (avformat_find_stream_info(ctx2, nullptr) < 0) {
+    if (avformat_find_stream_info(ctx2, NULL) < 0) {
         LOGE("Failed to find stream info for second file: %s", file2Path);
         throwJavaException(env, "Failed to find stream info for second file");
         ret = -4;
         goto end;
     }
 
-    // Determine which is video file and which is audio file
+    /* Determine which is video file and which is audio file */
     AVFormatContext *videoCtx, *audioCtx;
     const char *videoPath, *audioPath;
     
@@ -113,7 +110,7 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
         audioPath = file1Path;
     }
 
-    // Allocate packet
+    /* Allocate packet */
     packet = av_packet_alloc();
     if (!packet) {
         LOGE("Failed to allocate AVPacket memory");
@@ -122,8 +119,8 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
         goto end;
     }
 
-    // Create output context
-    avformat_alloc_output_context2(&outCtx, nullptr, nullptr, outputPath);
+    /* Create output context */
+    avformat_alloc_output_context2(&outCtx, NULL, NULL, outputPath);
     if (!outCtx) {
         LOGE("Failed to create output context: %s", outputPath);
         throwJavaException(env, "Failed to create output context");
@@ -131,7 +128,7 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
         goto end;
     }
 
-    // Find video and audio stream indices
+    /* Find video and audio stream indices */
     for (int i = 0; i < videoCtx->nb_streams; i++) {
         if (videoCtx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             videoStreamIndex = i;
@@ -156,11 +153,11 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
 
     LOGI("Found video stream index: %d, audio stream index: %d", videoStreamIndex, audioStreamIndex);
 
-    // Add video streams
+    /* Add video streams */
     for (int i = 0; i < videoCtx->nb_streams; i++) {
         AVStream *inStream = videoCtx->streams[i];
         if (inStream->codecpar->codec_type != AVMEDIA_TYPE_AUDIO) {
-            AVStream *outStream = avformat_new_stream(outCtx, nullptr);
+            AVStream *outStream = avformat_new_stream(outCtx, NULL);
             if (!outStream) {
                 LOGE("Failed to create output video stream");
                 throwJavaException(env, "Failed to create output video stream");
@@ -175,15 +172,15 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
             }
             if (inStream->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
                 videoStream = outStream;
-                // Copy timebase
+                /* Copy timebase */
                 outStream->time_base = inStream->time_base;
             }
         }
     }
 
-    // Add audio stream
+    /* Add audio stream */
     inAudioStream = audioCtx->streams[audioStreamIndex];
-    audioStream = avformat_new_stream(outCtx, nullptr);
+    audioStream = avformat_new_stream(outCtx, NULL);
     if (!audioStream) {
         LOGE("Failed to create output audio stream");
         throwJavaException(env, "Failed to create output audio stream");
@@ -198,7 +195,7 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
     }
     audioStream->time_base = inAudioStream->time_base;
 
-    // Open output file
+    /* Open output file */
     if (!(outCtx->oformat->flags & AVFMT_NOFILE)) {
         if (avio_open(&outCtx->pb, outputPath, AVIO_FLAG_WRITE) < 0) {
             LOGE("Failed to open output file: %s", outputPath);
@@ -208,23 +205,23 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
         }
     }
 
-    // Write file header
-    if (avformat_write_header(outCtx, nullptr) < 0) {
+    /* Write file header */
+    if (avformat_write_header(outCtx, NULL) < 0) {
         LOGE("Failed to write file header");
         throwJavaException(env, "Failed to write output file header");
         ret = -13;
         goto end;
     }
     
-    // Write video data first
+    /* Write video data first */
     while (av_read_frame(videoCtx, packet) >= 0) {
         if (packet->stream_index == videoStreamIndex) {
-            // Record PTS of the first video frame
+            /* Record PTS of the first video frame */
             if (videoStartPts == AV_NOPTS_VALUE) {
                 videoStartPts = packet->pts;
             }
             
-            // Adjust PTS and DTS
+            /* Adjust PTS and DTS */
             packet->pts -= videoStartPts;
             if (packet->dts != AV_NOPTS_VALUE) {
                 packet->dts -= videoStartPts;
@@ -236,21 +233,21 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
         av_packet_unref(packet);
     }
 
-    // Write audio data
+    /* Write audio data */
     while (av_read_frame(audioCtx, packet) >= 0) {
         if (packet->stream_index == audioStreamIndex) {
-            // Record PTS of the first audio frame
+            /* Record PTS of the first audio frame */
             if (audioStartPts == AV_NOPTS_VALUE) {
                 audioStartPts = packet->pts;
             }
             
-            // Adjust audio PTS and DTS
+            /* Adjust audio PTS and DTS */
             packet->pts -= audioStartPts;
             if (packet->dts != AV_NOPTS_VALUE) {
                 packet->dts -= audioStartPts;
             }
             
-            // Ensure audio duration doesn't exceed video duration
+            /* Ensure audio duration doesn't exceed video duration */
             if (packet->pts * av_q2d(audioStream->time_base) > 
                 videoDuration * av_q2d(videoCtx->streams[videoStreamIndex]->time_base)) {
                 break;
@@ -262,7 +259,7 @@ jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring ou
         av_packet_unref(packet);
     }
 
-    // Write file trailer
+    /* Write file trailer */
     if (av_write_trailer(outCtx) < 0) {
         LOGE("Failed to write file trailer");
         ret = -14;
@@ -274,7 +271,7 @@ end:
     if (ret != 0) {
         LOGE("Audio-video merge failed with error code: %d", ret);
     }
-    // Cleanup resources
+    /* Cleanup resources */
     if (packet) av_packet_free(&packet);
     if (ctx1) avformat_close_input(&ctx1);
     if (ctx2) avformat_close_input(&ctx2);
@@ -285,9 +282,9 @@ end:
         avformat_free_context(outCtx);
     }
 
-    env->ReleaseStringUTFChars(file1, file1Path);
-    env->ReleaseStringUTFChars(file2, file2Path);
-    env->ReleaseStringUTFChars(out, outputPath);
+    (*env)->ReleaseStringUTFChars(env, file1, file1Path);
+    (*env)->ReleaseStringUTFChars(env, file2, file2Path);
+    (*env)->ReleaseStringUTFChars(env, out, outputPath);
     return ret;
 }
 
@@ -297,18 +294,18 @@ static JNINativeMethod methods[] = {
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     JNIEnv* env;
-    if (vm->GetEnv(reinterpret_cast<void**>(&env), JNI_VERSION_1_6) != JNI_OK) {
+    if ((*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_6) != JNI_OK) {
         LOGE("Failed to get JNI environment");
         return JNI_ERR;
     }
 
-    jclass clazz = env->FindClass("io/github/yearsyan/yaad/media/FFmpegTools");
-    if (clazz == nullptr) {
+    jclass clazz = (*env)->FindClass(env, "io/github/yearsyan/yaad/media/FFmpegTools");
+    if (clazz == NULL) {
         LOGE("Failed to find FFmpegTools class");
         return JNI_ERR;
     }
 
-    if (env->RegisterNatives(clazz, methods, sizeof(methods) / sizeof(methods[0])) < 0) {
+    if ((*env)->RegisterNatives(env, clazz, methods, sizeof(methods) / sizeof(methods[0])) < 0) {
         LOGE("Failed to register native methods");
         return JNI_ERR;
     }
