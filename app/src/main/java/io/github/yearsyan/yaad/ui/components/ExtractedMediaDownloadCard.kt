@@ -1,0 +1,425 @@
+package io.github.yearsyan.yaad.ui.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircleOutline
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.ErrorOutline
+import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.HourglassEmpty
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import io.github.yaad.downloader_core.DownloadState
+import io.github.yearsyan.yaad.R
+import io.github.yearsyan.yaad.downloader.DownloadManager
+import io.github.yearsyan.yaad.utils.FormatUtils
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.util.Locale
+
+@Composable
+fun ExtractedMediaDownloadCard(
+    scope: CoroutineScope,
+    record: DownloadManager.ExtractedMediaDownloadSessionRecord,
+    modifier: Modifier = Modifier,
+    onRemove: (DownloadManager.ExtractedMediaDownloadSessionRecord) -> Unit = {},
+    onOpenFolder: (folderPath: String) -> Unit = {}
+) {
+    // 获取实时状态
+    val currentStatus by
+        produceState(initialValue = getExtractedMediaStatus(record), key1 = record) {
+            while (true) {
+                value = getExtractedMediaStatus(record)
+                delay(1000) // 每秒更新一次
+            }
+        }
+
+    val totalMediaCount = record.mediaUrls.size
+    val completedCount = record.completedCount
+    val progressPercentage = if (totalMediaCount > 0) (completedCount.toFloat() / totalMediaCount) * 100 else 0f
+    
+    // 获取当前下载速度
+    val totalSpeed = record.childSessions.sumOf { childRecord ->
+        childRecord.httpDownloadSession?.getStatus()?.speed?.toDouble() ?: 0.0
+    }
+    val speedKbps = totalSpeed / 1024
+
+    Card(
+        modifier = modifier
+            .fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = MaterialTheme.shapes.medium
+    ) {
+        Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
+            // 标题显示原始链接
+            Text(
+                text = getDisplayName(record.originLink),
+                style = MaterialTheme.typography.titleLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            // 显示媒体文件数量信息
+            Text(
+                text = "媒体文件: ${record.mediaUrls.size} 个",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (currentStatus != ExtractedMediaStatus.COMPLETED) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    LinearProgressIndicator(
+                        progress = progressPercentage / 100f,
+                        modifier = Modifier.weight(1f).height(8.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = String.format(
+                            Locale.getDefault(),
+                            "%.1f%%",
+                            progressPercentage
+                        ),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+
+            if (currentStatus == ExtractedMediaStatus.DOWNLOADING) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "已完成: $completedCount/$totalMediaCount",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    if (speedKbps > 0) {
+                        Text(
+                            text = FormatUtils.formatSpeed(speedKbps),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 状态信息
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    val statusVisuals = getExtractedMediaStatusVisuals(currentStatus)
+                    Icon(
+                        imageVector = statusVisuals.first,
+                        contentDescription = getExtractedMediaStatusText(currentStatus),
+                        modifier = Modifier.size(20.dp),
+                        tint = statusVisuals.second
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = getExtractedMediaStatusText(currentStatus),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = statusVisuals.second,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                
+                if (currentStatus == ExtractedMediaStatus.COMPLETED) {
+                    Text(
+                        text = "已完成 $completedCount 个",
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            ExtractedMediaActionButtons(
+                state = currentStatus,
+                onPauseAll = {
+                    scope.launch {
+                        record.childSessions.forEach { childRecord ->
+                            childRecord.httpDownloadSession?.pause()
+                        }
+                    }
+                },
+                onResumeAll = {
+                    scope.launch {
+                        record.childSessions.forEach { childRecord ->
+                            childRecord.httpDownloadSession?.resume()
+                        }
+                    }
+                },
+                onStopAll = {
+                    scope.launch {
+                        record.childSessions.forEach { childRecord ->
+                            childRecord.httpDownloadSession?.stop()
+                        }
+                    }
+                },
+                onRetryAll = {
+                    scope.launch {
+                        record.childSessions.forEach { childRecord ->
+                            childRecord.httpDownloadSession?.start()
+                        }
+                    }
+                },
+                onRemove = { scope.launch { onRemove(record) } },
+                onOpenFolder = { onOpenFolder(record.recoverFile) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExtractedMediaActionButtons(
+    state: ExtractedMediaStatus,
+    onPauseAll: () -> Unit,
+    onResumeAll: () -> Unit,
+    onStopAll: () -> Unit,
+    onRetryAll: () -> Unit,
+    onRemove: () -> Unit,
+    onOpenFolder: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End
+    ) {
+        when (state) {
+            ExtractedMediaStatus.DOWNLOADING -> {
+                ExtractedMediaActionButton(
+                    "全部暂停",
+                    Icons.Filled.Pause,
+                    onPauseAll,
+                    isPrimary = false
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                ExtractedMediaActionButton(
+                    "全部停止",
+                    Icons.Filled.Stop,
+                    onStopAll,
+                    isPrimary = false,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+            ExtractedMediaStatus.PAUSED -> {
+                ExtractedMediaActionButton(
+                    "全部继续",
+                    Icons.Filled.PlayArrow,
+                    onResumeAll,
+                    isPrimary = true
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                ExtractedMediaActionButton(
+                    "全部停止",
+                    Icons.Filled.Stop,
+                    onStopAll,
+                    isPrimary = false,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+            ExtractedMediaStatus.STOPPED -> {
+                ExtractedMediaActionButton(
+                    "全部重试",
+                    Icons.Filled.Refresh,
+                    onRetryAll,
+                    isPrimary = true
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                ExtractedMediaActionButton(
+                    stringResource(R.string.button_remove),
+                    Icons.Filled.DeleteOutline,
+                    onRemove,
+                    isPrimary = false,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+            ExtractedMediaStatus.COMPLETED -> {
+                ExtractedMediaActionButton(
+                    "打开文件夹",
+                    Icons.Filled.FileOpen,
+                    onOpenFolder,
+                    isPrimary = true
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                ExtractedMediaActionButton(
+                    stringResource(R.string.button_clear),
+                    Icons.Filled.Clear,
+                    onRemove,
+                    isPrimary = false
+                )
+            }
+            ExtractedMediaStatus.ERROR -> {
+                ExtractedMediaActionButton(
+                    "全部重试",
+                    Icons.Filled.Refresh,
+                    onRetryAll,
+                    isPrimary = true
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                ExtractedMediaActionButton(
+                    stringResource(R.string.button_remove),
+                    Icons.Filled.DeleteOutline,
+                    onRemove,
+                    isPrimary = false,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+            ExtractedMediaStatus.PENDING -> {
+                ExtractedMediaActionButton(
+                    stringResource(R.string.button_remove),
+                    Icons.Filled.DeleteOutline,
+                    onRemove,
+                    isPrimary = false,
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExtractedMediaActionButton(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    isPrimary: Boolean = true,
+    tint: Color = LocalContentColor.current
+) {
+    if (isPrimary) {
+        Button(onClick = onClick, modifier = modifier) {
+            Icon(
+                icon,
+                contentDescription = text,
+                Modifier.size(ButtonDefaults.IconSize)
+            )
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Text(text)
+        }
+    } else {
+        OutlinedButton(onClick = onClick, modifier = modifier) {
+            Icon(
+                icon,
+                contentDescription = text,
+                Modifier.size(ButtonDefaults.IconSize),
+                tint = tint
+            )
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Text(text, color = tint)
+        }
+    }
+}
+
+// 定义提取媒体下载状态枚举
+enum class ExtractedMediaStatus {
+    PENDING,
+    DOWNLOADING,
+    PAUSED,
+    STOPPED,
+    COMPLETED,
+    ERROR
+}
+
+// 获取提取媒体下载的状态
+private fun getExtractedMediaStatus(record: DownloadManager.ExtractedMediaDownloadSessionRecord): ExtractedMediaStatus {
+    if (record.childSessions.isEmpty()) {
+        return ExtractedMediaStatus.PENDING
+    }
+    
+    val childStates = record.childSessions.mapNotNull { it.httpDownloadSession?.getStatus()?.state }
+    
+    return when {
+        childStates.all { it == DownloadState.COMPLETED } -> ExtractedMediaStatus.COMPLETED
+        childStates.any { it == DownloadState.ERROR } -> ExtractedMediaStatus.ERROR
+        childStates.any { it == DownloadState.DOWNLOADING || it == DownloadState.PENDING } -> ExtractedMediaStatus.DOWNLOADING
+        childStates.any { it == DownloadState.PAUSED } -> ExtractedMediaStatus.PAUSED
+        childStates.all { it == DownloadState.STOPPED } -> ExtractedMediaStatus.STOPPED
+        else -> ExtractedMediaStatus.PENDING
+    }
+}
+
+// 获取状态文本
+@Composable
+private fun getExtractedMediaStatusText(status: ExtractedMediaStatus): String {
+    return when (status) {
+        ExtractedMediaStatus.PENDING -> stringResource(R.string.status_pending)
+        ExtractedMediaStatus.DOWNLOADING -> "正在下载媒体"
+        ExtractedMediaStatus.PAUSED -> stringResource(R.string.status_paused)
+        ExtractedMediaStatus.STOPPED -> stringResource(R.string.status_stopped)
+        ExtractedMediaStatus.COMPLETED -> stringResource(R.string.status_completed)
+        ExtractedMediaStatus.ERROR -> "部分下载失败"
+    }
+}
+
+// 获取状态图标和颜色
+@Composable
+private fun getExtractedMediaStatusVisuals(status: ExtractedMediaStatus): Pair<ImageVector, Color> {
+    return when (status) {
+        ExtractedMediaStatus.PENDING -> Icons.Filled.HourglassEmpty to MaterialTheme.colorScheme.onSurfaceVariant
+        ExtractedMediaStatus.DOWNLOADING -> Icons.Filled.Download to MaterialTheme.colorScheme.primary
+        ExtractedMediaStatus.PAUSED -> Icons.Filled.Pause to MaterialTheme.colorScheme.onSurfaceVariant
+        ExtractedMediaStatus.STOPPED -> Icons.Filled.Stop to MaterialTheme.colorScheme.onSurfaceVariant
+        ExtractedMediaStatus.COMPLETED -> Icons.Filled.CheckCircleOutline to Color(0xFF4CAF50)
+        ExtractedMediaStatus.ERROR -> Icons.Filled.ErrorOutline to MaterialTheme.colorScheme.error
+    }
+}
+
+// 从URL获取显示名称
+private fun getDisplayName(url: String): String {
+    return try {
+        val uri = java.net.URI(url)
+        val host = uri.host ?: "未知来源"
+        val path = uri.path?.takeIf { it.isNotEmpty() && it != "/" } ?: ""
+        when {
+            path.isNotEmpty() -> "$host$path"
+            else -> host
+        }
+    } catch (e: Exception) {
+        url.take(50) + if (url.length > 50) "..." else ""
+    }
+} 

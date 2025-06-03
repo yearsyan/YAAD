@@ -147,7 +147,7 @@ class HttpDownloadSession(
     private var progressReporterJob: Job? = null
     private val downloadListeners: HashSet<IDownloadListener> = HashSet()
 
-    override suspend fun start(starResultListener: (e: Exception?) -> Unit) {
+    override suspend fun start(starResultListener: (e: Exception?) -> Unit, finishListener: () -> Unit) {
         if (currentState == DownloadState.DOWNLOADING || currentState == DownloadState.VALIDATING) {
             println("Download already in progress or validating.")
             starResultListener(IllegalStateException("Download already in progress or validating."))
@@ -400,128 +400,134 @@ class HttpDownloadSession(
             }
 
             starResultListener(null)
-            downloadJobs.joinAll()
-
-            // Post-download logic
-            if (isStopped) {
-                currentState = DownloadState.STOPPED
-                println("Download was explicitly stopped.")
-            } else if (downloadJobs.any { it.isCancelled } && currentErrorMessage != null && currentErrorMessage!!.contains("Critical part failure")) {
-                currentState = DownloadState.ERROR
-                println("Download error due to critical part failure.")
-            }
-            else if (downloadJobs.any { it.isCancelled }) {
-                currentState = DownloadState.ERROR // Or some other cancellation
-                if (currentErrorMessage == null) currentErrorMessage = "Download was cancelled or one or more parts failed."
-                println(currentErrorMessage)
-            }
-            else if (currentErrorMessage != null) { // Errors accumulated during download parts
-                currentState = DownloadState.ERROR
-                println("Download finished with errors: $currentErrorMessage")
-            }
-            else {
-                var allPartsCompleted = true
-                currentCheckpoint.parts.forEach { part ->
-                    val expectedToDownload = if (part.end == -1L) part.downloaded else (part.end - part.start + 1)
-                    if (part.downloaded < expectedToDownload) {
-                        allPartsCompleted = false
-                    }
-                }
-
-                if (allPartsCompleted) {
-                    if (ptr != 0L && currentCheckpoint.fileSize > 0) NativeBridge.msync(ptr, currentCheckpoint.fileSize)
-                    if (fd != -1 && currentCheckpoint.fileSize > 0) NativeBridge.resizeFile(fd, currentCheckpoint.fileSize)
-
-                    if (supportsRange && serverEtag != null) {
-                        currentState = DownloadState.VALIDATING
-                        notifyStateChanged()
-                        println("Validating ETag post-download...")
-                        try {
-                            val latestServerInfo = checkSupportForRangeAndGetInfoKtor(url) // Re-fetch with Ktor
-                            if (serverEtag == latestServerInfo.etag?.trim('"')) {
-                                println("ETag validation successful.")
-                                currentState = DownloadState.COMPLETED
-                            } else {
-                                val errorMsg = "ETag mismatch after download! Initial: $serverEtag, Current: ${latestServerInfo.etag}. File might have changed or download corrupted."
-                                println(errorMsg)
-                                currentErrorMessage = errorMsg
-                                currentState = DownloadState.ERROR
-                            }
-                        } catch (e: Exception) {
-                            val errorMsg = "Failed to re-fetch server info for ETag validation: ${e.message}"
-                            println(errorMsg)
-                            currentErrorMessage = errorMsg
-                            currentState = DownloadState.ERROR
-                        }
-                    } else {
-                        currentState = DownloadState.COMPLETED
-                    }
-
-                    if (currentState == DownloadState.COMPLETED && supportsRange) {
-                        controlMutex.withLock { metaFile.delete() }
-                    }
-                } else { // Not all parts completed, but no explicit stop or cancellation recorded above.
-                    currentState = DownloadState.ERROR
-                    if (currentErrorMessage == null) currentErrorMessage = "One or more parts failed to download completely."
-                    println(currentErrorMessage)
-                }
-            }
-            notifyStateChanged()
-            if (currentState == DownloadState.COMPLETED) {
-                downloadListeners.forEach { it.onComplete(this) }
-            }
-
-
-        } catch (e: Exception) {
-            if (e is CancellationException) {
-                println("Download scope cancelled by user or error.")
-                if (!isStopped) currentState = DownloadState.STOPPED // If not stopped explicitly, treat as stopped/cancelled
-                if (currentErrorMessage == null) currentErrorMessage = "Download cancelled."
-            } else {
-                currentState = DownloadState.ERROR
-                currentErrorMessage = currentErrorMessage ?: "Download failed: ${e.message}"
-                println(currentErrorMessage)
-            }
-            notifyStateChanged()
-        } finally {
-            progressReporterJob?.cancelAndJoin()
-
-            if (currentState != DownloadState.COMPLETED && currentState != DownloadState.PAUSED) {
-                if (ptr != 0L && checkpoint != null && checkpoint!!.fileSize > 0) {
-                    NativeBridge.munmap(ptr, checkpoint!!.fileSize)
-                }
-                if (fd != -1) {
-                    NativeBridge.closeFile(fd)
-                }
-                ptr = 0L
-                fd = -1
-            } else if (currentState == DownloadState.COMPLETED) { // Ensure cleanup on completion too
-                if (ptr != 0L && checkpoint != null && checkpoint!!.fileSize > 0) {
-                    NativeBridge.munmap(ptr, checkpoint!!.fileSize)
-                }
-                if (fd != -1) {
-                    NativeBridge.closeFile(fd)
-                }
-                ptr = 0L
-                fd = -1
-            }
-
-
-            if (supportsRange && checkpoint != null && currentState != DownloadState.COMPLETED) {
+            downloadScope.launch {
                 try {
-                    controlMutex.withLock {
-                        saveCheckpoint()
-                        updateThreadSpeedAndNotify()
+                    downloadJobs.joinAll()
+
+                    // Post-download logic
+                    if (isStopped) {
+                        currentState = DownloadState.STOPPED
+                        println("Download was explicitly stopped.")
+                    } else if (downloadJobs.any { it.isCancelled } && currentErrorMessage != null && currentErrorMessage!!.contains("Critical part failure")) {
+                        currentState = DownloadState.ERROR
+                        println("Download error due to critical part failure.")
+                    }
+                    else if (downloadJobs.any { it.isCancelled }) {
+                        currentState = DownloadState.ERROR // Or some other cancellation
+                        if (currentErrorMessage == null) currentErrorMessage = "Download was cancelled or one or more parts failed."
+                        println(currentErrorMessage)
+                    }
+                    else if (currentErrorMessage != null) { // Errors accumulated during download parts
+                        currentState = DownloadState.ERROR
+                        println("Download finished with errors: $currentErrorMessage")
+                    }
+                    else {
+                        var allPartsCompleted = true
+                        currentCheckpoint.parts.forEach { part ->
+                            val expectedToDownload = if (part.end == -1L) part.downloaded else (part.end - part.start + 1)
+                            if (part.downloaded < expectedToDownload) {
+                                allPartsCompleted = false
+                            }
+                        }
+
+                        if (allPartsCompleted) {
+                            if (ptr != 0L && currentCheckpoint.fileSize > 0) NativeBridge.msync(ptr, currentCheckpoint.fileSize)
+                            if (fd != -1 && currentCheckpoint.fileSize > 0) NativeBridge.resizeFile(fd, currentCheckpoint.fileSize)
+
+                            if (supportsRange && serverEtag != null) {
+                                currentState = DownloadState.VALIDATING
+                                notifyStateChanged()
+                                println("Validating ETag post-download...")
+                                try {
+                                    val latestServerInfo = checkSupportForRangeAndGetInfoKtor(url) // Re-fetch with Ktor
+                                    if (serverEtag == latestServerInfo.etag?.trim('"')) {
+                                        println("ETag validation successful.")
+                                        currentState = DownloadState.COMPLETED
+                                    } else {
+                                        val errorMsg = "ETag mismatch after download! Initial: $serverEtag, Current: ${latestServerInfo.etag}. File might have changed or download corrupted."
+                                        println(errorMsg)
+                                        currentErrorMessage = errorMsg
+                                        currentState = DownloadState.ERROR
+                                    }
+                                } catch (e: Exception) {
+                                    val errorMsg = "Failed to re-fetch server info for ETag validation: ${e.message}"
+                                    println(errorMsg)
+                                    currentErrorMessage = errorMsg
+                                    currentState = DownloadState.ERROR
+                                }
+                            } else {
+                                currentState = DownloadState.COMPLETED
+                            }
+
+                            if (currentState == DownloadState.COMPLETED && supportsRange) {
+                                controlMutex.withLock { metaFile.delete() }
+                            }
+                        } else { // Not all parts completed, but no explicit stop or cancellation recorded above.
+                            currentState = DownloadState.ERROR
+                            if (currentErrorMessage == null) currentErrorMessage = "One or more parts failed to download completely."
+                            println(currentErrorMessage)
+                        }
+                    }
+                    notifyStateChanged()
+                    if (currentState == DownloadState.COMPLETED) {
+                        downloadListeners.forEach { it.onComplete(this@HttpDownloadSession) }
                     }
                 } catch (e: Exception) {
-                    println("Error during final checkpoint save in finally block: ${e.message}")
+                    if (e is CancellationException) {
+                        println("Download scope cancelled by user or error.")
+                        if (!isStopped) currentState = DownloadState.STOPPED // If not stopped explicitly, treat as stopped/cancelled
+                        if (currentErrorMessage == null) currentErrorMessage = "Download cancelled."
+                    } else {
+                        currentState = DownloadState.ERROR
+                        notifyStateChanged()
+                    }
+                } finally {
+                    progressReporterJob?.cancelAndJoin()
+
+                    if (currentState != DownloadState.COMPLETED && currentState != DownloadState.PAUSED) {
+                        if (ptr != 0L && checkpoint != null && checkpoint!!.fileSize > 0) {
+                            NativeBridge.munmap(ptr, checkpoint!!.fileSize)
+                        }
+                        if (fd != -1) {
+                            NativeBridge.closeFile(fd)
+                        }
+                        ptr = 0L
+                        fd = -1
+                    } else if (currentState == DownloadState.COMPLETED) { // Ensure cleanup on completion too
+                        if (ptr != 0L && checkpoint != null && checkpoint!!.fileSize > 0) {
+                            NativeBridge.munmap(ptr, checkpoint!!.fileSize)
+                        }
+                        if (fd != -1) {
+                            NativeBridge.closeFile(fd)
+                        }
+                        ptr = 0L
+                        fd = -1
+                        finishListener()
+                    }
+
+
+                    if (supportsRange && checkpoint != null && currentState != DownloadState.COMPLETED) {
+                        try {
+                            controlMutex.withLock {
+                                saveCheckpoint()
+                                updateThreadSpeedAndNotify()
+                            }
+                        } catch (e: Exception) {
+                            println("Error during final checkpoint save in finally block: ${e.message}")
+                        }
+                    }
+                    updateStateOnJobsExit()
+                    if (currentState == DownloadState.ERROR || currentState == DownloadState.STOPPED) {
+                        notifyStateChanged()
+                    }
+                    println("Download session ended with state: $currentState")
                 }
             }
-            updateStateOnJobsExit()
-            if (currentState == DownloadState.ERROR || currentState == DownloadState.STOPPED) {
-                notifyStateChanged()
-            }
-            println("Download session ended with state: $currentState")
+        } catch (e: Exception) {
+            currentState = DownloadState.ERROR
+            currentErrorMessage = currentErrorMessage ?: "Download failed: ${e.message}"
+            println(currentErrorMessage)
+            notifyStateChanged()
         }
     }
 
@@ -754,6 +760,14 @@ class HttpDownloadSession(
         // However, direct state notifications are good too.
     }
 
+    @Synchronized // Keep synchronized as it's accessed from different contexts
+    fun setState(state: DownloadState) {
+        currentState = state
+        notifyStateChanged()
+        if (state == DownloadState.COMPLETED) {
+            downloadListeners.forEach { it.onComplete(this) }
+        }
+    }
 
     @Synchronized // Keep synchronized as it's accessed from different contexts
     override fun getStatus(): DownloadStatus {

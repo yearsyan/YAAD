@@ -60,13 +60,11 @@ object DownloadManager : IDownloadListener {
             savePath
         ) {
         var httpDownloadSession: HttpDownloadSession? = null
-        var jobContext: Job? = null
 
         override fun isActiveForService(): Boolean {
             val session = httpDownloadSession ?: return false
             val state = session.getStatus().state
-            return jobContext?.isActive == true &&
-                (state == DownloadState.DOWNLOADING ||
+            return (state == DownloadState.DOWNLOADING ||
                     state == DownloadState.VALIDATING ||
                     state == DownloadState.PENDING)
         }
@@ -87,13 +85,11 @@ object DownloadManager : IDownloadListener {
             savePath
         ) {
         var httpDownloadSession: HttpDownloadSession? = null
-        var jobContext: Job? = null
 
         override fun isActiveForService(): Boolean {
             val session = httpDownloadSession ?: return false
             val state = session.getStatus().state
-            return jobContext?.isActive == true &&
-                (state == DownloadState.DOWNLOADING ||
+            return (state == DownloadState.DOWNLOADING ||
                     state == DownloadState.VALIDATING ||
                     state == DownloadState.PENDING)
         }
@@ -150,7 +146,84 @@ object DownloadManager : IDownloadListener {
     private fun loadSavedSessions() {
         val savedSessions = dbHelper.getAllDownloadSessions()
         synchronized(downloadTasks) {
-            downloadTasks.addAll(savedSessions)
+            savedSessions.forEach { record ->
+                when (record) {
+                    is SingleHttpDownloadSessionRecord -> {
+                        // 重新创建 HttpDownloadSession
+                        val httpSession = HttpDownloadSession(
+                            url = record.originLink,
+                            path = record.savePath
+                        )
+                        httpSession.addDownloadListener(this)
+                        
+                        // 检查目标文件是否已存在
+                        val targetFile = File(record.savePath)
+                        if (targetFile.exists() && targetFile.length() > 0) {
+                            // 如果文件已存在，直接设置为完成状态
+                            httpSession.setState(DownloadState.COMPLETED)
+                            dbHelper.updateDownloadState(record.sessionId, DownloadState.COMPLETED)
+                        } else {
+                            // 尝试从恢复文件恢复下载状态
+                            val recoverFile = File(record.recoverFile)
+                            if (recoverFile.exists()) {
+                                try {
+                                    // 启动下载，它会自动从恢复文件恢复状态
+                                    downloadScope.launch(Dispatchers.IO) {
+                                        httpSession.start()
+                                    }
+                                } catch (e: Exception) {
+                                    // 恢复失败，记录错误但继续
+                                    e.printStackTrace()
+                                }
+                            }
+                        }
+                        
+                        record.httpDownloadSession = httpSession
+                        sessionMap[httpSession] = WeakReference(record)
+                    }
+                    is ExtractedMediaDownloadSessionRecord -> {
+                        // 对于每个子会话，重新创建 HttpDownloadSession
+                        record.childSessions.forEach { childRecord ->
+                            val httpSession = HttpDownloadSession(
+                                url = childRecord.originLink,
+                                path = childRecord.savePath
+                            )
+                            httpSession.addDownloadListener(this)
+                            
+                            // 检查目标文件是否已存在
+                            val targetFile = File(childRecord.savePath)
+                            if (targetFile.exists() && targetFile.length() > 0) {
+                                // 如果文件已存在，直接设置为完成状态
+                                httpSession.setState(DownloadState.COMPLETED)
+                                dbHelper.updateDownloadState(childRecord.sessionId, DownloadState.COMPLETED)
+                            } else {
+                                // 尝试从恢复文件恢复下载状态
+                                val recoverFile = File(childRecord.recoverFile)
+                                if (recoverFile.exists()) {
+                                    try {
+                                        // 启动下载，它会自动从恢复文件恢复状态
+                                        downloadScope.launch(Dispatchers.IO) {
+                                            httpSession.start()
+                                        }
+                                    } catch (e: Exception) {
+                                        // 恢复失败，记录错误但继续
+                                        e.printStackTrace()
+                                    }
+                                }
+                            }
+                            
+                            childRecord.httpDownloadSession = httpSession
+                            sessionMap[httpSession] = WeakReference(childRecord)
+                        }
+                        
+                        // 更新完成计数
+                        record.completedCount = record.childSessions.count { childRecord ->
+                            childRecord.httpDownloadSession?.getStatus()?.state == DownloadState.COMPLETED
+                        }
+                    }
+                }
+                downloadTasks.add(record)
+            }
             _tasksFlow.value = downloadTasks.toList()
         }
     }
@@ -199,7 +272,6 @@ object DownloadManager : IDownloadListener {
                 fileDist.absolutePath
             )
         record.httpDownloadSession = httpSession
-        record.jobContext = job
 
         sessionMap[httpSession] = WeakReference(record)
 
@@ -258,20 +330,16 @@ object DownloadManager : IDownloadListener {
             )
 
             httpSession.addDownloadListener(this)
-            val job = downloadScope.launch(Dispatchers.IO) {
-                try {
-                    httpSession.start()
+            downloadScope.launch(Dispatchers.IO) {
+                httpSession.start({}, {
                     synchronized(record) {
                         record.completedCount++
                         if (record.completedCount == mediaUrls.size) {
                             onAllComplete(record.childSessions.map { it.savePath })
+                            checkAndControlService()
                         }
                     }
-                } catch (e: Exception) {
-                    // 处理错误情况
-                } finally {
-                    checkAndControlService()
-                }
+                })
             }
 
             val childRecord = ChildHttpDownloadSessionRecord(
@@ -282,7 +350,6 @@ object DownloadManager : IDownloadListener {
                 parentSessionId = sessionId
             )
             childRecord.httpDownloadSession = httpSession
-            childRecord.jobContext = job
 
             sessionMap[httpSession] = WeakReference(childRecord)
             record.childSessions.add(childRecord)
@@ -317,6 +384,7 @@ object DownloadManager : IDownloadListener {
                     _tasksFlow.value = downloadTasks.toList()
                 }
                 session?.stop()
+                dbHelper.deleteDownloadSession(sessionId)
             }
             is ChildHttpDownloadSessionRecord -> {
                 val session = record.httpDownloadSession
@@ -326,9 +394,11 @@ object DownloadManager : IDownloadListener {
                     _tasksFlow.value = downloadTasks.toList()
                 }
                 session?.stop()
+                dbHelper.deleteDownloadSession(sessionId)
             }
             is ExtractedMediaDownloadSessionRecord -> {
                 val sessionsToStop = mutableListOf<HttpDownloadSession>()
+                val childSessionIds = mutableListOf<String>()
                 synchronized(downloadTasks) {
                     record.childSessions.forEach { childRecord ->
                         childRecord.httpDownloadSession?.let { 
@@ -336,15 +406,21 @@ object DownloadManager : IDownloadListener {
                             sessionsToStop.add(it)
                         }
                         downloadTasks.remove(childRecord)
+                        childSessionIds.add(childRecord.sessionId)
                     }
                     downloadTasks.remove(record)
                     _tasksFlow.value = downloadTasks.toList()
                 }
                 sessionsToStop.forEach { it.stop() }
+                
+                // 删除主记录
+                dbHelper.deleteDownloadSession(sessionId)
+                // 删除所有子记录
+                childSessionIds.forEach { childSessionId ->
+                    dbHelper.deleteDownloadSession(childSessionId)
+                }
             }
         }
-
-        dbHelper.deleteDownloadSession(sessionId)
     }
 
     private fun notifyListeners(
@@ -427,6 +503,8 @@ object DownloadManager : IDownloadListener {
 
     override fun onComplete(session: IDownloadSession) {
         super.onComplete(session)
+        val record = sessionMap[session]?.get() ?: return
+        dbHelper.updateDownloadState(record.sessionId, DownloadState.COMPLETED)
         notifyListeners(session) { s, r -> updateState(s, r) }
         updateFlow()
         checkAndControlService()
@@ -434,6 +512,8 @@ object DownloadManager : IDownloadListener {
 
     override fun onPause(session: IDownloadSession) {
         super.onPause(session)
+        val record = sessionMap[session]?.get() ?: return
+        dbHelper.updateDownloadState(record.sessionId, DownloadState.PAUSED)
         notifyListeners(session) { s, r -> updateState(s, r) }
         updateFlow()
         checkAndControlService()
@@ -447,6 +527,8 @@ object DownloadManager : IDownloadListener {
 
     override fun onError(session: IDownloadSession, reason: Exception) {
         super.onError(session, reason)
+        val record = sessionMap[session]?.get() ?: return
+        dbHelper.updateDownloadState(record.sessionId, DownloadState.ERROR)
         notifyListeners(session) { s, r -> updateState(s, r) }
         updateFlow()
         checkAndControlService()
@@ -454,6 +536,8 @@ object DownloadManager : IDownloadListener {
 
     override fun onResume(session: IDownloadSession, savePath: String) {
         super.onResume(session, savePath)
+        val record = sessionMap[session]?.get() ?: return
+        dbHelper.updateDownloadState(record.sessionId, DownloadState.DOWNLOADING)
         notifyListeners(session) { s, r -> updateState(s, r) }
         updateFlow()
         checkAndControlService()

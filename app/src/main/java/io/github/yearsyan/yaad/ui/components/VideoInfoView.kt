@@ -115,16 +115,6 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
                             }
                         }
                     })
-                    it.src.forEach { itemList ->
-
-//                        itemList.forEach { url ->
-//                            DownloadManager.addHttpDownloadTask(
-//                                url,
-//                                videoInfo.requestHeaders,
-//                                { PopNotification.show("下载开始") }
-//                            )
-//                        }
-                    }
                     finish()
                 }
             }

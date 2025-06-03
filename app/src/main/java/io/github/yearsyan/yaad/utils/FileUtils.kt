@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -28,15 +29,13 @@ object FileUtils {
         fileName: String
     ): Boolean = withContext(Dispatchers.IO) {
         try {
-            // 检查权限
-            if (!PermissionUtils.hasStoragePermission(context)) {
-                return@withContext false
-            }
-            
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 // Android 10+ 使用MediaStore API
                 moveToDownloadsWithMediaStore(context, sourceFile, fileName)
             } else {
+                if (!PermissionUtils.hasStoragePermission(context)) {
+                    return@withContext false
+                }
                 // Android 9及以下使用传统方式
                 moveToDownloadsLegacy(sourceFile, fileName)
             }
@@ -70,7 +69,9 @@ object FileUtils {
         return try {
             // 插入到MediaStore
             val uri: Uri? = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-            
+            if (uri == null) {
+                Log.e("FileUtils", "url is null")
+            }
             uri?.let { targetUri ->
                 // 复制文件内容
                 resolver.openOutputStream(targetUri)?.use { outputStream ->
