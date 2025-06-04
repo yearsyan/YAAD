@@ -37,6 +37,7 @@ object DownloadManager : IDownloadListener {
     }
 
     open class DownloadSessionRecord(
+        val title: String,
         val sessionId: String,
         val downloadType: DownloadType,
         val originLink: String,
@@ -47,12 +48,14 @@ object DownloadManager : IDownloadListener {
     }
 
     class SingleHttpDownloadSessionRecord(
+        title: String,
         sessionId: String,
         originLink: String,
         recoverFile: String,
         savePath: String = ""
     ) :
         DownloadSessionRecord(
+            title,
             sessionId,
             DownloadType.SINGLE_HTTP,
             originLink,
@@ -71,6 +74,7 @@ object DownloadManager : IDownloadListener {
     }
 
     class ChildHttpDownloadSessionRecord(
+        title: String,
         sessionId: String,
         originLink: String,
         recoverFile: String,
@@ -78,6 +82,7 @@ object DownloadManager : IDownloadListener {
         val parentSessionId: String
     ) :
         DownloadSessionRecord(
+            title,
             sessionId,
             DownloadType.CHILD_HTTP,
             originLink,
@@ -96,11 +101,13 @@ object DownloadManager : IDownloadListener {
     }
 
     class ExtractedMediaDownloadSessionRecord(
+        title: String,
         sessionId: String,
         originLink: String,
         recoverFile: String,
         val mediaUrls: List<String>,
     ) : DownloadSessionRecord(
+        title,
         sessionId,
         DownloadType.EXTRACTED_MEDIA,
         originLink,
@@ -256,13 +263,12 @@ object DownloadManager : IDownloadListener {
             )
 
         httpSession.addDownloadListener(this)
-        val job =
-            downloadScope.launch(Dispatchers.IO) {
-                httpSession.start({
-                    startResultListener(it)
-                    checkAndControlService()
-                })
-            }
+        downloadScope.launch(Dispatchers.IO) {
+            httpSession.start({
+                startResultListener(it)
+                checkAndControlService()
+            })
+        }
 
         val record =
             SingleHttpDownloadSessionRecord(
@@ -289,6 +295,7 @@ object DownloadManager : IDownloadListener {
     }
 
     fun addExtractedMediaDownloadTask(
+        title: String,
         originUrl: String,
         mediaUrls: List<String>,
         headers: Map<String, String> = emptyMap(),
@@ -301,6 +308,7 @@ object DownloadManager : IDownloadListener {
         }
 
         val record = ExtractedMediaDownloadSessionRecord(
+            title = title,
             sessionId = sessionId,
             originLink = originUrl,
             recoverFile = recoverDir.absolutePath,
@@ -315,7 +323,7 @@ object DownloadManager : IDownloadListener {
         dbHelper.saveDownloadSession(record)
 
         // 开始所有子任务的下载
-        mediaUrls.forEach { url ->
+        mediaUrls.forEachIndexed { mediaIndex, url ->
             val childSessionId = UUID.randomUUID().toString()
             val fileName = try {
                 java.net.URL(url).path.substringAfterLast('/').takeIf { it.isNotEmpty() } ?: "download_${System.currentTimeMillis()}"
@@ -343,6 +351,7 @@ object DownloadManager : IDownloadListener {
             }
 
             val childRecord = ChildHttpDownloadSessionRecord(
+                title = "$title-$mediaIndex",
                 sessionId = childSessionId,
                 originLink = url,
                 recoverFile = httpSession.recoverFilePath(),

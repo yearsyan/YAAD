@@ -1,7 +1,5 @@
 package io.github.yearsyan.yaad.ui.screens
 
-import android.content.Context
-import android.util.Log
 import android.view.View
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,17 +32,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kongzue.dialogx.dialogs.BottomDialog
-import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.dialogs.PopTip
-import com.kongzue.dialogx.dialogs.WaitDialog
 import com.kongzue.dialogx.interfaces.OnBindView
 import io.github.yearsyan.yaad.R
-import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.model.VideoInfo
-import io.github.yearsyan.yaad.services.ExtractorClient
+import io.github.yearsyan.yaad.services.UrlHandler
 import io.github.yearsyan.yaad.ui.components.VideoInfoView
-import io.github.yearsyan.yaad.utils.ClipboardUtil
-import io.github.yearsyan.yaad.utils.SettingsManager
+import io.github.yearsyan.yaad.utils.ClipboardUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,52 +64,6 @@ private fun showVideoInfo(src: String, videoInfo: VideoInfo) {
     )
 }
 
-private suspend fun dealWithLink(context: Context, link: String) {
-    if (link.contains("bilibili")) {
-        withContext(Dispatchers.Main) {
-            WaitDialog.show(R.string.url_extracting)
-        }
-        try {
-            val options = mutableMapOf<String,String>()
-            SettingsManager.getInstance(context).getCurrentCookieFile()?.let {
-                options.put("--cookies", it.path)
-            }
-            val resp =
-                ExtractorClient.getInstance().extractMedia(link, options)
-            resp?.result?.let { result ->
-                withContext(Dispatchers.Main) {
-                    WaitDialog.dismiss()
-                    showVideoInfo(link, result)
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            withContext(Dispatchers.Main) {
-                WaitDialog.dismiss()
-                PopNotification.show(R.string.extract_fail)
-            }
-        }
-        return
-    }
-    if (link.startsWith("http://") || link.startsWith("https://")) {
-        withContext(Dispatchers.Main) {
-            WaitDialog.show(R.string.url_extracting)
-        }
-        DownloadManager.addHttpDownloadTask(
-            url = link,
-            headers = emptyMap(),
-            startResultListener = { e ->
-                WaitDialog.dismiss()
-            }
-        )
-    } else if (link.startsWith("magnet:")) {
-        // TODO add bt download
-    } else if (link.isEmpty()) {
-        PopTip.show(R.string.url_empty)
-    } else {
-        PopTip.show(R.string.url_format_error)
-    }
-}
 
 @Composable
 fun InputScreen(scope: CoroutineScope) {
@@ -123,11 +71,16 @@ fun InputScreen(scope: CoroutineScope) {
     var urlText by remember { mutableStateOf("") }
     var analyzing by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val downloadWithLink: (text: String) -> Unit = downloadWithLink@{ it ->
+    val downloadWithLink: (text: String) -> Unit = downloadWithLink@{ link ->
         scope.launch {
             analyzing = true
             withContext(Dispatchers.Default) {
-                dealWithLink(context, it)
+                UrlHandler.dealWithLink(
+                    context,
+                    link
+                ) {
+                    showVideoInfo(link, it)
+                }
             }
             analyzing = false
         }
@@ -158,7 +111,7 @@ fun InputScreen(scope: CoroutineScope) {
         ) {
             FloatingActionButton(
                 onClick = {
-                    val text = ClipboardUtil.readText(context)
+                    val text = ClipboardUtils.readText(context)
                     if (text.isBlank()) {
                         PopTip.show(R.string.noting)
                         return@FloatingActionButton

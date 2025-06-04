@@ -5,7 +5,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
-object AssetUtil {
+object AssetUtils {
 
     fun copyAssetIfNeeded(context: Context, fileName: String): Boolean {
         val targetFile = File(context.filesDir, fileName)

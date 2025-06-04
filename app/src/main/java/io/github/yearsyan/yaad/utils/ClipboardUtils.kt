@@ -4,7 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 
-object ClipboardUtil {
+object ClipboardUtils {
     fun readText(context: Context): String {
         val clipboard =
             context.getSystemService(Context.CLIPBOARD_SERVICE)

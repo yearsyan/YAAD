@@ -86,7 +86,7 @@ fun ExtractedMediaDownloadCard(
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             // 标题显示原始链接
             Text(
-                text = getDisplayName(record.originLink),
+                text = getDisplayName(record.title),
                 style = MaterialTheme.typography.titleLarge,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis

@@ -81,7 +81,7 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
                     selectedQualityKey?.let { key -> videoInfo.streams[key] }
                 stream?.let {
                     val items = it.src.map { streamItem -> streamItem.get(0) }
-                    DownloadManager.addExtractedMediaDownloadTask(src, items, videoInfo.requestHeaders, { medias ->
+                    DownloadManager.addExtractedMediaDownloadTask(videoInfo.title, src, items, videoInfo.requestHeaders, { medias ->
                         if (medias.isEmpty() || medias.size != items.size) {
                             return@addExtractedMediaDownloadTask
                         }

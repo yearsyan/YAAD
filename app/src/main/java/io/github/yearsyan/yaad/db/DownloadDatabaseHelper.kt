@@ -22,6 +22,7 @@ class DownloadDatabaseHelper(context: Context) :
         private const val DATABASE_VERSION = 2
 
         private const val TABLE_DOWNLOAD_SESSIONS = "download_sessions"
+        private const val COLUMN_TITLE = "title"
         private const val COLUMN_SESSION_ID = "session_id"
         private const val COLUMN_DOWNLOAD_TYPE = "download_type"
         private const val COLUMN_ORIGIN_LINK = "origin_link"
@@ -38,6 +39,7 @@ class DownloadDatabaseHelper(context: Context) :
         db.execSQL("""
             CREATE TABLE $TABLE_DOWNLOAD_SESSIONS (
                 $COLUMN_SESSION_ID TEXT PRIMARY KEY,
+                $COLUMN_TITLE TEXT NOT NULL,
                 $COLUMN_DOWNLOAD_TYPE TEXT NOT NULL,
                 $COLUMN_ORIGIN_LINK TEXT NOT NULL,
                 $COLUMN_RECOVER_FILE TEXT NOT NULL,
@@ -65,6 +67,7 @@ class DownloadDatabaseHelper(context: Context) :
                 put(COLUMN_ORIGIN_LINK, record.originLink)
                 put(COLUMN_RECOVER_FILE, record.recoverFile)
                 put(COLUMN_SAVE_PATH, record.savePath)
+                put(COLUMN_TITLE, record.title)
                 
                 // 根据不同的记录类型获取下载状态
                 val downloadState = when (record) {
@@ -144,6 +147,7 @@ class DownloadDatabaseHelper(context: Context) :
         cursor.use {
             while (it.moveToNext()) {
                 val sessionId = it.getString(it.getColumnIndexOrThrow(COLUMN_SESSION_ID))
+                val title = it.getString(it.getColumnIndexOrThrow(COLUMN_TITLE))
                 val downloadType = it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_TYPE))
                 val originLink = it.getString(it.getColumnIndexOrThrow(COLUMN_ORIGIN_LINK))
                 val recoverFile = it.getString(it.getColumnIndexOrThrow(COLUMN_RECOVER_FILE))
@@ -155,6 +159,7 @@ class DownloadDatabaseHelper(context: Context) :
                 val record = when (DownloadType.valueOf(downloadType)) {
                     DownloadType.SINGLE_HTTP -> {
                         SingleHttpDownloadSessionRecord(
+                            title = title,
                             sessionId = sessionId,
                             originLink = originLink,
                             recoverFile = recoverFile,
@@ -163,6 +168,7 @@ class DownloadDatabaseHelper(context: Context) :
                     }
                     DownloadType.EXTRACTED_MEDIA -> {
                         ExtractedMediaDownloadSessionRecord(
+                            title = title,
                             sessionId = sessionId,
                             originLink = originLink,
                             recoverFile = recoverFile,
@@ -171,6 +177,7 @@ class DownloadDatabaseHelper(context: Context) :
                     }
                     DownloadType.CHILD_HTTP -> {
                         ChildHttpDownloadSessionRecord(
+                            title = title,
                             sessionId = sessionId,
                             originLink = originLink,
                             recoverFile = recoverFile,
@@ -207,6 +214,8 @@ class DownloadDatabaseHelper(context: Context) :
                             it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_TYPE)
                         )
                     )
+                val title =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_TITLE))
                 val originLink =
                     it.getString(it.getColumnIndexOrThrow(COLUMN_ORIGIN_LINK))
                 val recoverFile =
@@ -237,14 +246,16 @@ class DownloadDatabaseHelper(context: Context) :
                             emptyList<String>()
                         }
                         ExtractedMediaDownloadSessionRecord(
+                            title,
                             sessionId,
                             originLink,
                             recoverFile,
-                            mediaUrls
+                            mediaUrls,
                         )
                     }
                     DownloadType.CHILD_HTTP ->
                         ChildHttpDownloadSessionRecord(
+                            title,
                             sessionId,
                             originLink,
                             recoverFile,
@@ -253,6 +264,7 @@ class DownloadDatabaseHelper(context: Context) :
                         )
                     else ->
                         DownloadSessionRecord(
+                            title,
                             sessionId,
                             downloadType,
                             originLink,

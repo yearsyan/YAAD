@@ -3,8 +3,10 @@ package io.github.yearsyan.yaad.services
 import android.content.*
 import android.os.*
 import android.util.Log
+import io.github.yaad.downloader_core.getAppContext
 import io.github.yearsyan.yaad.IExtractorService
 import io.github.yearsyan.yaad.model.MediaResult
+import io.github.yearsyan.yaad.utils.SettingsManager
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -100,11 +102,20 @@ private constructor(private val applicationContext: Context) {
     }
 
     suspend fun extractMedia(
+        context: Context,
         url: String,
-        options: Map<String, String>?
+        inputOptions: Map<String, String>?
     ): MediaResult? {
         if (!isBound.get() || extractorService == null) {
             return null
+        }
+
+        val options = mutableMapOf<String,String>()
+        SettingsManager.getInstance(context).getCurrentCookieFile()?.let {
+            options.put("--cookies", it.path)
+        }
+        if (inputOptions != null) {
+            options.putAll(inputOptions)
         }
 
         return withContext(Dispatchers.IO) {
