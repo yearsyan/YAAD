@@ -81,37 +81,19 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
                     selectedQualityKey?.let { key -> videoInfo.streams[key] }
                 stream?.let {
                     val items = it.src.map { streamItem -> streamItem.get(0) }
-                    DownloadManager.addExtractedMediaDownloadTask(videoInfo.title, src, items, videoInfo.requestHeaders, { medias ->
-                        if (medias.isEmpty() || medias.size != items.size) {
-                            return@addExtractedMediaDownloadTask
-                        }
-                        val media1 = File(medias[0])
-                        val media2 = File(medias[1])
-                        val mergeAt = File(getAppContext()?.filesDir, "${videoInfo.title}.mp4").absolutePath
-                        GlobalScope.launch(Dispatchers.Default) {
-                            PopNotification.show("合并开始")
-                            FFmpegTools.mergeAV(medias[0], medias[1], mergeAt)
-                            withContext(Dispatchers.IO) {
-                                media1.delete()
-                                media2.delete()
-                            }
-
-                            val mergedFile = File(mergeAt)
+                    DownloadManager.addExtractedMediaDownloadTask(videoInfo.title, src, items, videoInfo.requestHeaders, { media ->
+                        GlobalScope.launch {
+                            val mergedFile = File(media)
                             if (mergedFile.exists()) {
                                 val fileName = "${videoInfo.title}.mp4"
                                 val success = FileUtils.moveToDownloads(context, mergedFile, fileName)
-
-                                withContext(Dispatchers.Main) {
-                                    if (success) {
-                                        PopNotification.show("视频已保存到下载目录")
-                                    } else {
-                                        PopNotification.show("移动到下载目录失败")
-                                    }
+                                if (success) {
+                                    PopNotification.show("视频已保存到下载目录")
+                                } else {
+                                    PopNotification.show("移动到下载目录失败")
                                 }
                             } else {
-                                withContext(Dispatchers.Main) {
-                                    PopNotification.show("合并失败")
-                                }
+                                PopNotification.show("合并失败")
                             }
                         }
                     })

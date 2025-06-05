@@ -3,12 +3,15 @@ package io.github.yearsyan.yaad.downloader
 import android.app.Application
 import android.content.Intent
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import io.github.yaad.downloader_core.DownloadState
 import io.github.yaad.downloader_core.HttpDownloadSession
 import io.github.yaad.downloader_core.IDownloadListener
 import io.github.yaad.downloader_core.IDownloadSession
+import io.github.yaad.downloader_core.getAppContext
 import io.github.yearsyan.yaad.db.DownloadDatabaseHelper
+import io.github.yearsyan.yaad.media.FFmpegTools
 import io.github.yearsyan.yaad.utils.sha512
 import java.io.File
 import java.lang.ref.WeakReference
@@ -27,6 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 
 object DownloadManager : IDownloadListener {
     enum class DownloadType {
@@ -42,7 +46,8 @@ object DownloadManager : IDownloadListener {
         val downloadType: DownloadType,
         val originLink: String,
         val recoverFile: String,
-        val savePath: String = ""
+        val savePath: String = "",
+        val downloadState: DownloadState
     ) {
         open fun isActiveForService(): Boolean = false
     }
@@ -52,7 +57,8 @@ object DownloadManager : IDownloadListener {
         sessionId: String,
         originLink: String,
         recoverFile: String,
-        savePath: String = ""
+        savePath: String = "",
+        downloadState: DownloadState = DownloadState.PENDING
     ) :
         DownloadSessionRecord(
             title,
@@ -60,7 +66,8 @@ object DownloadManager : IDownloadListener {
             DownloadType.SINGLE_HTTP,
             originLink,
             recoverFile,
-            savePath
+            savePath,
+            downloadState
         ) {
         var httpDownloadSession: HttpDownloadSession? = null
 
@@ -79,7 +86,8 @@ object DownloadManager : IDownloadListener {
         originLink: String,
         recoverFile: String,
         savePath: String = "",
-        val parentSessionId: String
+        val parentSessionId: String,
+        downloadState: DownloadState = DownloadState.PENDING
     ) :
         DownloadSessionRecord(
             title,
@@ -87,7 +95,8 @@ object DownloadManager : IDownloadListener {
             DownloadType.CHILD_HTTP,
             originLink,
             recoverFile,
-            savePath
+            savePath,
+            downloadState
         ) {
         var httpDownloadSession: HttpDownloadSession? = null
 
@@ -106,12 +115,15 @@ object DownloadManager : IDownloadListener {
         originLink: String,
         recoverFile: String,
         val mediaUrls: List<String>,
+        downloadState: DownloadState = DownloadState.PENDING
     ) : DownloadSessionRecord(
         title,
         sessionId,
         DownloadType.EXTRACTED_MEDIA,
         originLink,
-        recoverFile
+        recoverFile,
+        "",
+        downloadState
     ) {
         val childSessions = mutableListOf<ChildHttpDownloadSessionRecord>()
         var completedCount = 0
@@ -139,9 +151,6 @@ object DownloadManager : IDownloadListener {
             IDownloadSession, WeakReference<DownloadSessionRecord>
         >()
 
-    private var isServiceRunning = false
-    private val serviceControlMutex = Mutex()
-
     fun initByApplication(app: Application) {
         if (Looper.getMainLooper() != Looper.myLooper())
             throw RuntimeException("Must be called from main thread")
@@ -153,6 +162,7 @@ object DownloadManager : IDownloadListener {
     private fun loadSavedSessions() {
         val savedSessions = dbHelper.getAllDownloadSessions()
         synchronized(downloadTasks) {
+            downloadTasks.clear()
             savedSessions.forEach { record ->
                 when (record) {
                     is SingleHttpDownloadSessionRecord -> {
@@ -169,19 +179,9 @@ object DownloadManager : IDownloadListener {
                             // 如果文件已存在，直接设置为完成状态
                             httpSession.setState(DownloadState.COMPLETED)
                             dbHelper.updateDownloadState(record.sessionId, DownloadState.COMPLETED)
-                        } else {
-                            // 尝试从恢复文件恢复下载状态
-                            val recoverFile = File(record.recoverFile)
-                            if (recoverFile.exists()) {
-                                try {
-                                    // 启动下载，它会自动从恢复文件恢复状态
-                                    downloadScope.launch(Dispatchers.IO) {
-                                        httpSession.start()
-                                    }
-                                } catch (e: Exception) {
-                                    // 恢复失败，记录错误但继续
-                                    e.printStackTrace()
-                                }
+                        } else if (File(record.recoverFile).exists()){
+                            downloadScope.launch(Dispatchers.IO) {
+                                httpSession.start()
                             }
                         }
                         
@@ -199,23 +199,13 @@ object DownloadManager : IDownloadListener {
                             
                             // 检查目标文件是否已存在
                             val targetFile = File(childRecord.savePath)
-                            if (targetFile.exists() && targetFile.length() > 0) {
+                            if (childRecord.downloadState != DownloadState.COMPLETED && targetFile.exists() && targetFile.length() > 0) {
                                 // 如果文件已存在，直接设置为完成状态
                                 httpSession.setState(DownloadState.COMPLETED)
                                 dbHelper.updateDownloadState(childRecord.sessionId, DownloadState.COMPLETED)
-                            } else {
-                                // 尝试从恢复文件恢复下载状态
-                                val recoverFile = File(childRecord.recoverFile)
-                                if (recoverFile.exists()) {
-                                    try {
-                                        // 启动下载，它会自动从恢复文件恢复状态
-                                        downloadScope.launch(Dispatchers.IO) {
-                                            httpSession.start()
-                                        }
-                                    } catch (e: Exception) {
-                                        // 恢复失败，记录错误但继续
-                                        e.printStackTrace()
-                                    }
+                            } else if (File(childRecord.recoverFile).exists()) {
+                                downloadScope.launch(Dispatchers.IO) {
+                                    httpSession.start()
                                 }
                             }
                             
@@ -231,7 +221,7 @@ object DownloadManager : IDownloadListener {
                 }
                 downloadTasks.add(record)
             }
-            _tasksFlow.value = downloadTasks.toList()
+            _tasksFlow.value = downloadTasks.toList().filter { it !is ChildHttpDownloadSessionRecord }
         }
     }
 
@@ -299,7 +289,7 @@ object DownloadManager : IDownloadListener {
         originUrl: String,
         mediaUrls: List<String>,
         headers: Map<String, String> = emptyMap(),
-        onAllComplete: (saves: List<String>) -> Unit = {}
+        onAllComplete: (saves: String) -> Unit = {}
     ): DownloadSessionRecord {
         val sessionId = UUID.randomUUID().toString()
         val recoverDir = File(context.filesDir, sessionId)
@@ -343,8 +333,20 @@ object DownloadManager : IDownloadListener {
                     synchronized(record) {
                         record.completedCount++
                         if (record.completedCount == mediaUrls.size) {
-                            onAllComplete(record.childSessions.map { it.savePath })
-                            checkAndControlService()
+                            downloadScope.launch(Dispatchers.Default) {
+                                val medias = record.childSessions.map { it.savePath }
+                                val media1 = File(medias[0])
+                                val media2 = File(medias[1])
+                                val mergeAt = File(getAppContext()?.filesDir, "${title}.mp4").absolutePath
+                                FFmpegTools.mergeAV(medias[0], medias[1], mergeAt)
+                                withContext(Dispatchers.IO) {
+                                    media1.delete()
+                                    media2.delete()
+                                }
+                                dbHelper.updateDownloadState(record.sessionId, DownloadState.COMPLETED)
+                                onAllComplete(mergeAt)
+                                checkAndControlService()
+                            }
                         }
                     }
                 })

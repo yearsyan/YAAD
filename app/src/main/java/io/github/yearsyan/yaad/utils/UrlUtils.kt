@@ -110,11 +110,3 @@ suspend fun getFileInfo(url: String): FileInfo {
         chunked = chunked
     )
 }
-
-suspend fun getResponseContentType(url: String): String {
-    val client = HttpClient(CIO)
-    val response = client.get(url)
-    val contentType = response.contentType()?.contentType ?: ""
-    response.call.cancel()
-    return contentType
-}

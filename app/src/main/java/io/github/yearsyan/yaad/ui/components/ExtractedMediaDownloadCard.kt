@@ -26,7 +26,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -63,6 +62,9 @@ fun ExtractedMediaDownloadCard(
         produceState(initialValue = getExtractedMediaStatus(record), key1 = record) {
             while (true) {
                 value = getExtractedMediaStatus(record)
+                if (value == ExtractedMediaStatus.COMPLETED) {
+                    break
+                }
                 delay(1000) // 每秒更新一次
             }
         }
@@ -103,24 +105,10 @@ fun ExtractedMediaDownloadCard(
 
             if (currentStatus != ExtractedMediaStatus.COMPLETED) {
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    LinearProgressIndicator(
-                        progress = progressPercentage / 100f,
-                        modifier = Modifier.weight(1f).height(8.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = String.format(
-                            Locale.getDefault(),
-                            "%.1f%%",
-                            progressPercentage
-                        ),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+                ExtractDownloadProgressBar(
+                    modifier = Modifier.fillMaxWidth().height(12.dp),
+                    record = record
+                )
             }
 
             if (currentStatus == ExtractedMediaStatus.DOWNLOADING) {
@@ -367,6 +355,11 @@ enum class ExtractedMediaStatus {
 
 // 获取提取媒体下载的状态
 private fun getExtractedMediaStatus(record: DownloadManager.ExtractedMediaDownloadSessionRecord): ExtractedMediaStatus {
+
+    if (record.downloadState == DownloadState.COMPLETED) {
+        return ExtractedMediaStatus.COMPLETED
+    }
+
     if (record.childSessions.isEmpty()) {
         return ExtractedMediaStatus.PENDING
     }

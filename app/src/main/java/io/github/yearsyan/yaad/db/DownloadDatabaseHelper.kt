@@ -154,7 +154,7 @@ class DownloadDatabaseHelper(context: Context) :
                 val savePath = it.getString(it.getColumnIndexOrThrow(COLUMN_SAVE_PATH))
                 val mediaUrls = it.getString(it.getColumnIndexOrThrow(COLUMN_MEDIA_URLS))
                 val parentSessionId = it.getString(it.getColumnIndexOrThrow(COLUMN_PARENT_SESSION_ID))
-                val downloadState = it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE))
+                val downloadState = DownloadState.valueOf(it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)))
 
                 val record = when (DownloadType.valueOf(downloadType)) {
                     DownloadType.SINGLE_HTTP -> {
@@ -163,7 +163,8 @@ class DownloadDatabaseHelper(context: Context) :
                             sessionId = sessionId,
                             originLink = originLink,
                             recoverFile = recoverFile,
-                            savePath = savePath
+                            savePath = savePath,
+                            downloadState = downloadState
                         )
                     }
                     DownloadType.EXTRACTED_MEDIA -> {
@@ -172,7 +173,8 @@ class DownloadDatabaseHelper(context: Context) :
                             sessionId = sessionId,
                             originLink = originLink,
                             recoverFile = recoverFile,
-                            mediaUrls = if (mediaUrls.isNotEmpty()) json.decodeFromString(mediaUrls) else emptyList()
+                            mediaUrls = if (mediaUrls.isNotEmpty()) json.decodeFromString(mediaUrls) else emptyList(),
+                            downloadState
                         )
                     }
                     DownloadType.CHILD_HTTP -> {
@@ -182,7 +184,8 @@ class DownloadDatabaseHelper(context: Context) :
                             originLink = originLink,
                             recoverFile = recoverFile,
                             savePath = savePath,
-                            parentSessionId = parentSessionId
+                            parentSessionId = parentSessionId,
+                            downloadState
                         )
                     }
                     else -> null
@@ -226,6 +229,8 @@ class DownloadDatabaseHelper(context: Context) :
                     it.getString(it.getColumnIndexOrThrow(COLUMN_MEDIA_URLS)) ?: ""
                 val parentSessionId = 
                     it.getString(it.getColumnIndexOrThrow(COLUMN_PARENT_SESSION_ID)) ?: ""
+                val downloadState =
+                    DownloadState.valueOf(it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)))
 
                 return when (downloadType) {
                     DownloadType.SINGLE_HTTP ->
@@ -233,7 +238,9 @@ class DownloadDatabaseHelper(context: Context) :
                             sessionId,
                             originLink,
                             recoverFile,
-                            savePath
+                            savePath,
+                            "",
+                            downloadState
                         )
                     DownloadType.EXTRACTED_MEDIA -> {
                         val mediaUrls = try {
@@ -251,6 +258,7 @@ class DownloadDatabaseHelper(context: Context) :
                             originLink,
                             recoverFile,
                             mediaUrls,
+                            downloadState
                         )
                     }
                     DownloadType.CHILD_HTTP ->
@@ -260,7 +268,8 @@ class DownloadDatabaseHelper(context: Context) :
                             originLink,
                             recoverFile,
                             savePath,
-                            parentSessionId
+                            parentSessionId,
+                            downloadState
                         )
                     else ->
                         DownloadSessionRecord(
@@ -269,7 +278,8 @@ class DownloadDatabaseHelper(context: Context) :
                             downloadType,
                             originLink,
                             recoverFile,
-                            savePath
+                            savePath,
+                            downloadState
                         )
                 }
             }

@@ -71,6 +71,7 @@ data class DownloadStatus(
     val parts: List<ThreadPartInfo>,
     val speed: Double,
     val state: DownloadState,
+    val totalSize: Long,
     val errorMessage: String? = ""
 )
 
@@ -79,7 +80,6 @@ private data class ServerFileInfo(
     val fileSize: Long,
     val etag: String?
 )
-
 class HttpDownloadSession(
     private val url: String,
     private val path: String,
@@ -119,8 +119,8 @@ class HttpDownloadSession(
     private var ptr: Long = 0L
     private var supportsRange = false
     private val speedUpdateTime: Long = 200 // milliseconds
-    private var totalFileSize: Long = 0
-    private var serverEtag: String? = null
+    @Volatile private var totalFileSize: Long = 0
+    @Volatile private var serverEtag: String? = null
 
     private val mergedHeaders: Map<String, String> = run {
         val normalizedHeaders = headers.mapKeys { (key, _) -> normalizeHeaderKey(key) }
@@ -812,6 +812,7 @@ class HttpDownloadSession(
             partsInfoCopy,
             totalSpeedAllParts.coerceAtLeast(0.0), // Ensure speed isn't negative
             currentState,
+            totalFileSize,
             currentErrorMessage ?: ""
         )
     }
