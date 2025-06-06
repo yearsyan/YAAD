@@ -345,20 +345,11 @@ class HttpDownloadSession(
                                 val read = bodyChannel.readAvailable(buffer, 0, buffer.size)
                                 if (read == -1) break
 
-                                if (ptr != 0L && supportsRange) { // Ensure mmap pointer is valid for ranged downloads
-                                    for (j in 0 until read) {
-                                        NativeBridge.writeByte(ptr, mmapWriteOffset + j, buffer[j])
-                                    }
-                                } else if (!supportsRange) {
-                                    if (ptr != 0L) {
-                                        for (j in 0 until read) {
-                                            NativeBridge.writeByte(ptr, mmapWriteOffset + j, buffer[j])
-                                        }
-                                    } else {
-                                        println("Warning: ptr is 0, cannot write with mmap for non-ranged part $index")
-                                    }
+                                if (ptr != 0L) { // Ensure mmap pointer is valid for ranged downloads
+                                    NativeBridge.writeByteArray(ptr, mmapWriteOffset, buffer, 0, read)
+                                } else {
+                                    println("Warning: ptr is 0, cannot write with mmap for non-ranged part $index")
                                 }
-
 
                                 mmapWriteOffset += read
                                 controlMutex.withLock {

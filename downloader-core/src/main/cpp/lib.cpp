@@ -50,6 +50,12 @@ void native_writeByte(JNIEnv* env, jobject thiz, jlong ptr, jlong offset, jbyte 
     base[offset] = static_cast<uint8_t>(value);
 }
 
+void native_writeByteArray(JNIEnv* env, jobject thiz, jlong ptr, jlong offset, jbyteArray array, jint start, jint len) {
+    if (ptr == 0 || offset < 0) return;
+    uint8_t* base = reinterpret_cast<uint8_t*>(ptr);
+    env->GetByteArrayRegion(array, start, len, reinterpret_cast<jbyte*>(base + offset));
+}
+
 void native_closeFile(JNIEnv* env, jobject thiz, jint fd) {
     if (fd >= 0) {
         close(fd);
@@ -91,6 +97,7 @@ static JNINativeMethod methods[] = {
         {"resizeFile","(IJ)I",                  (void*)native_resizeFile},
         {"mmapFile",  "(IJ)J",                  (void*)native_mmapFile},
         {"writeByte", "(JJB)V",                 (void*)native_writeByte},
+        {"writeByteArray", "(JJ[BII)V", (void*)native_writeByteArray},
         {"closeFile", "(I)V",                   (void*)native_closeFile},
         {"msync",     "(JJ)V",                  (void*)native_msync},
         {"munmap", "(JJ)V", (void*)native_munmap},

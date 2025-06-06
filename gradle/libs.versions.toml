@@ -1,6 +1,7 @@
 [versions]
 agp = "8.9.2"
 ffmpeg = "7.1-beta.13"
+libtorrent = "0.1-alpha.8"
 zxing = "3.5.2"
 dialogx = "0.0.49"
 kotlin = "2.1.20"
@@ -26,6 +27,7 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 androidx-material-icons-core = { module = "androidx.compose.material:material-icons-core", version.ref = "materialIconsCore" }
 androidx-material-icons-extended = { module = "androidx.compose.material:material-icons-extended", version.ref = "materialIconsCore" }
 ffmpeg-mini = { module = "io.github.yearsyan:ffmpeg-mini", version.ref = "ffmpeg" }
+libtorrent = { module = "io.github.yearsyan:libtorrent", version.ref = "libtorrent" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 dialogx = { module = "com.kongzue.dialogx:DialogX", version.ref = "dialogx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

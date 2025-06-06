@@ -13,6 +13,8 @@ object NativeBridge {
 
     external fun writeByte(ptr: Long, offset: Long, value: Byte)
 
+    external fun writeByteArray(ptr: Long, offset: Long, array: ByteArray, srcOffset: Int, srcLength: Int)
+
     external fun closeFile(fd: Int)
 
     external fun msync(ptr: Long, size: Long)

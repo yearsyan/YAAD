@@ -8,7 +8,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffunction-sections -fdata-sections")
 
-
+find_package(libtorrent REQUIRED CONFIG)
 add_library(
         downloader-core
         SHARED
@@ -19,5 +19,6 @@ find_library(log-lib log)
 
 target_link_libraries(
         downloader-core
+        libtorrent::torrent-rasterbar
         ${log-lib}
 )
