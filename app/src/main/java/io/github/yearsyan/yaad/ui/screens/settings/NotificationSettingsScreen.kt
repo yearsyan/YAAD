@@ -1,6 +1,5 @@
 package io.github.yearsyan.yaad.ui.screens.settings
 
-import android.app.Activity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -10,7 +9,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -28,7 +26,7 @@ fun NotificationSettingsScreen(
 ) {
     val context = LocalContext.current
     val activity = context as? MainActivity
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val settings by settingsManager.settings.collectAsState()
     
