@@ -3,7 +3,7 @@ name: Build Release APK
 on:
   push:
     branches:
-      - '*'
+      - 'main'
 
 jobs:
   build-apk:
@@ -13,6 +13,11 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
+    - name: Update ABI Filters
+      run: |
+        chmod +x scripts/update_abi_filters.sh
+        ./scripts/update_abi_filters.sh
+
     - name: Set up JDK
       uses: actions/setup-java@v3
       with:
@@ -21,11 +26,6 @@ jobs:
 
     - name: Setup Android SDK
       uses: android-actions/setup-android@v3
-
-    - name: Update ABI Filters
-      run: |
-        chmod +x scripts/update_abi_filters.sh
-        ./scripts/update_abi_filters.sh
 
     - name: Decode Keystore
       run: |
