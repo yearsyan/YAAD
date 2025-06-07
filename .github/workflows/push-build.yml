@@ -1,0 +1,62 @@
+name: Build Release APK
+
+on:
+  push:
+    branches:
+      - '*'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
+    - name: Update ABI Filters
+      run: |
+        chmod +x scripts/update_abi_filters.sh
+        ./scripts/update_abi_filters.sh
+
+    - name: Decode Keystore
+      run: |
+        echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/keystore.jks
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Build Release APK
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      run: |
+        echo "storePassword=$KEYSTORE_PASSWORD" >> app/keystore.properties
+        echo "keyPassword=$KEY_PASSWORD" >> app/keystore.properties
+        echo "keyAlias=$KEY_ALIAS" >> app/keystore.properties
+        echo "storeFile=keystore.jks" >> app/keystore.properties
+        ./gradlew assembleRelease
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: output
+        path: app/build/outputs/
+        if-no-files-found: error
+        retention-days: 7
+        compression-level: 6
+        overwrite: true
+
+    - name: Clean up
+      run: |
+        rm app/keystore.jks
+        rm app/keystore.properties

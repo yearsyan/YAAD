@@ -22,3 +22,4 @@
 -keep class com.kongzue.dialogx.** { *; }
 -dontwarn com.kongzue.dialogx.**
 -keep class android.view.** { *; }
+-dontwarn org.slf4j.impl.StaticLoggerBinder
