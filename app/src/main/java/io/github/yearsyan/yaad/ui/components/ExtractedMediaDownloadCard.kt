@@ -197,7 +197,7 @@ fun ExtractedMediaDownloadCard(
                     }
                 },
                 onRemove = { scope.launch { onRemove(record) } },
-                onOpenFolder = { onOpenFolder(record.recoverFile) }
+                onOpenFolder = { onOpenFolder(record.savePath) }
             )
         }
     }

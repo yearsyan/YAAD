@@ -7,11 +7,14 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.request.get
 import io.ktor.client.request.header
+import io.ktor.client.request.headers
 import io.ktor.client.request.prepareGet
+import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpMethod
 import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.readAvailable
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -312,11 +315,8 @@ class HttpDownloadSession(
                             if (!isActive) break
                         }
                         if (isStopped) break
-
-
-                        var response: HttpResponse? = null
                         try {
-                            response = ktorClient.prepareGet(url) {
+                            ktorClient.prepareGet(url) {
                                 mergedHeaders.forEach { (k, v) -> header(k, v) }
                                 if (supportsRange) {
                                     header(HttpHeaders.Range, "bytes=$startOffset-${part.end}")
@@ -324,40 +324,40 @@ class HttpDownloadSession(
                                 if (supportsRange && part.downloaded > 0 && currentCheckpoint.etag != null) {
                                     header(HttpHeaders.IfRange, currentCheckpoint.etag)
                                 }
-                            }.execute()
+                            }.execute { response ->
+                                if (response.status.value !in 200..299) {
+                                    val errorMsg = "HTTP error: ${response.status} for part $index (range $startOffset-${part.end}). ETag used: ${currentCheckpoint.etag}"
+                                    println(errorMsg)
+                                    throw IOException(errorMsg)
+                                }
 
-                            if (response.status.value !in 200..299) {
-                                val errorMsg = "HTTP error: ${response.status} for part $index (range $startOffset-${part.end}). ETag used: ${currentCheckpoint.etag}"
-                                println(errorMsg)
-                                throw IOException(errorMsg)
+                                val bodyChannel: ByteReadChannel = response.body()
+                                val buffer = ByteArray(65536)
+                                var mmapWriteOffset = startOffset
+
+                                while (isActive) {
+                                    while (isPaused && isActive) {
+                                        delay(200)
+                                    }
+                                    if (isStopped || !isActive) break
+
+                                    val read = bodyChannel.readAvailable(buffer, 0, buffer.size)
+                                    if (read == -1) break
+
+                                    if (ptr != 0L) { // Ensure mmap pointer is valid for ranged downloads
+                                        NativeBridge.writeByteArray(ptr, mmapWriteOffset, buffer, 0, read)
+                                    } else {
+                                        println("Warning: ptr is 0, cannot write with mmap for non-ranged part $index")
+                                    }
+
+                                    mmapWriteOffset += read
+                                    controlMutex.withLock {
+                                        part.downloaded += read
+                                    }
+                                }
+                                // If successfully completed, break retry loop
+                                lastError = null // Clear last error
                             }
-
-                            val bodyChannel: ByteReadChannel = response.body()
-                            val buffer = ByteArray(65536)
-                            var mmapWriteOffset = startOffset
-
-                            while (isActive) {
-                                while (isPaused && isActive) {
-                                    delay(200)
-                                }
-                                if (isStopped || !isActive) break
-
-                                val read = bodyChannel.readAvailable(buffer, 0, buffer.size)
-                                if (read == -1) break
-
-                                if (ptr != 0L) { // Ensure mmap pointer is valid for ranged downloads
-                                    NativeBridge.writeByteArray(ptr, mmapWriteOffset, buffer, 0, read)
-                                } else {
-                                    println("Warning: ptr is 0, cannot write with mmap for non-ranged part $index")
-                                }
-
-                                mmapWriteOffset += read
-                                controlMutex.withLock {
-                                    part.downloaded += read
-                                }
-                            }
-                            // If successfully completed, break retry loop
-                            lastError = null // Clear last error
                             break
                         } catch (e: IOException) {
                             lastError = e
@@ -380,11 +380,13 @@ class HttpDownloadSession(
                     }
 
                     if (retryCount == 3 && lastError != null) {
-                        val errorMsg = "Part $index failed after 3 retries: ${lastError.message}"
-                        println(errorMsg)
-                        controlMutex.withLock {
-                            if (currentErrorMessage == null) currentErrorMessage = errorMsg
-                            else currentErrorMessage += "\n$errorMsg"
+                        lastError?.let {
+                            val errorMsg = "Part $index failed after 3 retries: ${it.message}"
+                            println(errorMsg)
+                            controlMutex.withLock {
+                                if (currentErrorMessage == null) currentErrorMessage = errorMsg
+                                else currentErrorMessage += "\n$errorMsg"
+                            }
                         }
                     }
                 }
@@ -988,24 +990,10 @@ class HttpDownloadSession(
 
 
     private suspend fun checkSupportForRangeAndGetInfoKtor(targetUrl: String): ServerFileInfo {
-        // Use Ktor's HEAD request first if possible, or GET and then consume/close body quickly.
-        // For simplicity, using GET and relying on Ktor to handle body efficiently if not consumed.
-        // A HEAD request is better: ktorClient.head(targetUrl) { ... }
-        var response: HttpResponse? = null
-        try {
-            response = ktorClient.get(targetUrl) {
-                method = HttpMethod.Head // Request HEAD to get headers without body
-                mergedHeaders.forEach { (k, v) -> header(k, v) }
-            }
-
-            // If HEAD fails or is not allowed, try GET
-            if (response.status.value !in 200..299 || response.status.value == 405) { // 405 Method Not Allowed
-                response.cancel()
-                response = ktorClient.get(targetUrl) { // Fallback to GET
-                    mergedHeaders.forEach { (k, v) -> header(k, v) }
-                }
-            }
-
+        return ktorClient.prepareGet {
+            url(targetUrl)
+            mergedHeaders.forEach{ (k, v) -> header(k, v) }
+        }.execute { response ->
 
             if (response.status.value !in 200..299) {
                 throw IOException("HTTP Response code: ${response.status} from ${response.call.request.method.value} $targetUrl")
@@ -1020,20 +1008,18 @@ class HttpDownloadSession(
             val effectiveSupportsRange = rangeHeader == "bytes" && contentLength != null && contentLength > 0 && !isChunked
 
             if (isChunked) {
-                return ServerFileInfo(false, -1L, currentEtag) // File size unknown for chunked
+                return@execute ServerFileInfo(false, -1L, currentEtag) // File size unknown for chunked
             }
             if (contentLength == null) {
                 // If not chunked and no content-length, it's problematic.
                 // Could be a stream of indeterminate length. Treat as not supporting range and size unknown for now.
                 // Or throw an error if a content length is strictly expected.
                 println("Warning: Content-Length header missing and not chunked for $targetUrl. Range support disabled, size unknown.")
-                return ServerFileInfo(false, -1L, currentEtag)
+                return@execute ServerFileInfo(false, -1L, currentEtag)
                 // throw IOException("Failed to get Content-Length and not chunked for $targetUrl.")
             }
 
-            return ServerFileInfo(effectiveSupportsRange, contentLength, currentEtag)
-        } finally {
-            response?.cancel() // Ensure the response body is consumed and connection is closed
+            return@execute ServerFileInfo(effectiveSupportsRange, contentLength, currentEtag)
         }
     }
 
