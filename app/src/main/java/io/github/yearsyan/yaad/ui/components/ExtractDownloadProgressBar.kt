@@ -34,11 +34,15 @@ fun ExtractDownloadProgressBar(
                 value =
                     record.childSessions
                         .mapNotNull { it.httpDownloadSession?.getStatus() }
-                        .map { Pair(it.totalDownloaded, it.totalSize) }
+                        .map { child ->
+                            child.parts.map {
+                                Pair(it.downloaded, it.end - it.start)
+                            }
+                        }.flatten()
                 if (record.downloadState == DownloadState.COMPLETED) {
                     return@produceState
                 }
-                delay(200)
+                delay(500)
             }
         }
 
