@@ -46,7 +46,7 @@ jobs:
         echo "storeFile=keystore.jks" >> app/keystore.properties
         ./gradlew assembleRelease
 
-    - name: Upload APK
+    - name: Upload Output
       uses: actions/upload-artifact@v4
       with:
         name: output
@@ -55,6 +55,22 @@ jobs:
         retention-days: 7
         compression-level: 6
         overwrite: true
+
+    - name: Install tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qrencode jq   
+
+    - name: Create APK QRCode
+      if: github.actor == 'yearsyan'
+      continue-on-error: true
+      env:
+        UPLOAD_BASE: ${{ secrets.UPLOAD_BASE }}
+        UPLOAD_TOKEN: ${{ secrets.UPLOAD_TOKEN }}
+      run: |
+        HASH=${GITHUB_SHA:0:8}
+        chmod +x scripts/upload_file.sh
+        ./scripts/upload_file.sh temp/apk/yaad-${HASH}.apk app/build/outputs/apk/release/app-release.apk
 
     - name: Clean up
       run: |
