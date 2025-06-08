@@ -38,7 +38,8 @@ fun ExtractDownloadProgressBar(
                             child.parts.map {
                                 Pair(it.downloaded, it.end - it.start)
                             }
-                        }.flatten()
+                        }
+                        .flatten()
                 if (record.downloadState == DownloadState.COMPLETED) {
                     return@produceState
                 }

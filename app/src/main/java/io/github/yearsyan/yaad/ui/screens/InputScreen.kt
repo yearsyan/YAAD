@@ -1,5 +1,6 @@
 package io.github.yearsyan.yaad.ui.screens
 
+import android.content.Intent
 import android.view.View
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +14,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ContentPaste
 import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.QrCodeScanner
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -35,6 +38,7 @@ import com.kongzue.dialogx.dialogs.BottomDialog
 import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.interfaces.OnBindView
 import io.github.yearsyan.yaad.R
+import io.github.yearsyan.yaad.ScanActivity
 import io.github.yearsyan.yaad.model.VideoInfo
 import io.github.yearsyan.yaad.services.UrlHandler
 import io.github.yearsyan.yaad.ui.components.VideoInfoView
@@ -76,6 +80,19 @@ fun InputScreen(scope: CoroutineScope) {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        IconButton(
+            onClick = {
+                val intent = Intent(context, ScanActivity::class.java)
+                context.startActivity(intent)
+            },
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Outlined.QrCodeScanner,
+                contentDescription = "Scan QR Code"
+            )
+        }
+
         Column(
             modifier =
                 Modifier.fillMaxWidth()
