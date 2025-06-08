@@ -47,19 +47,22 @@ import io.github.yearsyan.yaad.utils.FormatUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import java.util.Locale
 
 @Composable
 fun ExtractedMediaDownloadCard(
     scope: CoroutineScope,
     record: DownloadManager.ExtractedMediaDownloadSessionRecord,
     modifier: Modifier = Modifier,
-    onRemove: (DownloadManager.ExtractedMediaDownloadSessionRecord) -> Unit = {},
+    onRemove: (DownloadManager.ExtractedMediaDownloadSessionRecord) -> Unit =
+        {},
     onOpenFolder: (folderPath: String) -> Unit = {}
 ) {
     // 获取实时状态
     val currentStatus by
-        produceState(initialValue = getExtractedMediaStatus(record), key1 = record) {
+        produceState(
+            initialValue = getExtractedMediaStatus(record),
+            key1 = record
+        ) {
             while (true) {
                 value = getExtractedMediaStatus(record)
                 if (value == ExtractedMediaStatus.COMPLETED) {
@@ -71,17 +74,21 @@ fun ExtractedMediaDownloadCard(
 
     val totalMediaCount = record.mediaUrls.size
     val completedCount = record.completedCount
-    val progressPercentage = if (totalMediaCount > 0) (completedCount.toFloat() / totalMediaCount) * 100 else 0f
-    
+    val progressPercentage =
+        if (totalMediaCount > 0)
+            (completedCount.toFloat() / totalMediaCount) * 100
+        else 0f
+
     // 获取当前下载速度
-    val totalSpeed = record.childSessions.sumOf { childRecord ->
-        childRecord.httpDownloadSession?.getStatus()?.speed?.toDouble() ?: 0.0
-    }
+    val totalSpeed =
+        record.childSessions.sumOf { childRecord ->
+            childRecord.httpDownloadSession?.getStatus()?.speed?.toDouble()
+                ?: 0.0
+        }
     val speedKbps = totalSpeed / 1024
 
     Card(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = MaterialTheme.shapes.medium
     ) {
@@ -93,9 +100,9 @@ fun ExtractedMediaDownloadCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // 显示媒体文件数量信息
             Text(
                 text = "媒体文件: ${record.mediaUrls.size} 个",
@@ -139,10 +146,12 @@ fun ExtractedMediaDownloadCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val statusVisuals = getExtractedMediaStatusVisuals(currentStatus)
+                    val statusVisuals =
+                        getExtractedMediaStatusVisuals(currentStatus)
                     Icon(
                         imageVector = statusVisuals.first,
-                        contentDescription = getExtractedMediaStatusText(currentStatus),
+                        contentDescription =
+                            getExtractedMediaStatusText(currentStatus),
                         modifier = Modifier.size(20.dp),
                         tint = statusVisuals.second
                     )
@@ -155,7 +164,7 @@ fun ExtractedMediaDownloadCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                
+
                 if (currentStatus == ExtractedMediaStatus.COMPLETED) {
                     Text(
                         text = "已完成 $completedCount 个",
@@ -354,7 +363,9 @@ enum class ExtractedMediaStatus {
 }
 
 // 获取提取媒体下载的状态
-private fun getExtractedMediaStatus(record: DownloadManager.ExtractedMediaDownloadSessionRecord): ExtractedMediaStatus {
+private fun getExtractedMediaStatus(
+    record: DownloadManager.ExtractedMediaDownloadSessionRecord
+): ExtractedMediaStatus {
 
     if (record.downloadState == DownloadState.COMPLETED) {
         return ExtractedMediaStatus.COMPLETED
@@ -363,15 +374,24 @@ private fun getExtractedMediaStatus(record: DownloadManager.ExtractedMediaDownlo
     if (record.childSessions.isEmpty()) {
         return ExtractedMediaStatus.PENDING
     }
-    
-    val childStates = record.childSessions.mapNotNull { it.httpDownloadSession?.getStatus()?.state }
-    
+
+    val childStates =
+        record.childSessions.mapNotNull {
+            it.httpDownloadSession?.getStatus()?.state
+        }
+
     return when {
-        childStates.all { it == DownloadState.COMPLETED } -> ExtractedMediaStatus.COMPLETED
-        childStates.any { it == DownloadState.ERROR } -> ExtractedMediaStatus.ERROR
-        childStates.any { it == DownloadState.DOWNLOADING || it == DownloadState.PENDING } -> ExtractedMediaStatus.DOWNLOADING
-        childStates.any { it == DownloadState.PAUSED } -> ExtractedMediaStatus.PAUSED
-        childStates.all { it == DownloadState.STOPPED } -> ExtractedMediaStatus.STOPPED
+        childStates.all { it == DownloadState.COMPLETED } ->
+            ExtractedMediaStatus.COMPLETED
+        childStates.any { it == DownloadState.ERROR } ->
+            ExtractedMediaStatus.ERROR
+        childStates.any {
+            it == DownloadState.DOWNLOADING || it == DownloadState.PENDING
+        } -> ExtractedMediaStatus.DOWNLOADING
+        childStates.any { it == DownloadState.PAUSED } ->
+            ExtractedMediaStatus.PAUSED
+        childStates.all { it == DownloadState.STOPPED } ->
+            ExtractedMediaStatus.STOPPED
         else -> ExtractedMediaStatus.PENDING
     }
 }
@@ -384,21 +404,31 @@ private fun getExtractedMediaStatusText(status: ExtractedMediaStatus): String {
         ExtractedMediaStatus.DOWNLOADING -> "正在下载媒体"
         ExtractedMediaStatus.PAUSED -> stringResource(R.string.status_paused)
         ExtractedMediaStatus.STOPPED -> stringResource(R.string.status_stopped)
-        ExtractedMediaStatus.COMPLETED -> stringResource(R.string.status_completed)
+        ExtractedMediaStatus.COMPLETED ->
+            stringResource(R.string.status_completed)
         ExtractedMediaStatus.ERROR -> "部分下载失败"
     }
 }
 
 // 获取状态图标和颜色
 @Composable
-private fun getExtractedMediaStatusVisuals(status: ExtractedMediaStatus): Pair<ImageVector, Color> {
+private fun getExtractedMediaStatusVisuals(
+    status: ExtractedMediaStatus
+): Pair<ImageVector, Color> {
     return when (status) {
-        ExtractedMediaStatus.PENDING -> Icons.Filled.HourglassEmpty to MaterialTheme.colorScheme.onSurfaceVariant
-        ExtractedMediaStatus.DOWNLOADING -> Icons.Filled.Download to MaterialTheme.colorScheme.primary
-        ExtractedMediaStatus.PAUSED -> Icons.Filled.Pause to MaterialTheme.colorScheme.onSurfaceVariant
-        ExtractedMediaStatus.STOPPED -> Icons.Filled.Stop to MaterialTheme.colorScheme.onSurfaceVariant
-        ExtractedMediaStatus.COMPLETED -> Icons.Filled.CheckCircleOutline to Color(0xFF4CAF50)
-        ExtractedMediaStatus.ERROR -> Icons.Filled.ErrorOutline to MaterialTheme.colorScheme.error
+        ExtractedMediaStatus.PENDING ->
+            Icons.Filled.HourglassEmpty to
+                MaterialTheme.colorScheme.onSurfaceVariant
+        ExtractedMediaStatus.DOWNLOADING ->
+            Icons.Filled.Download to MaterialTheme.colorScheme.primary
+        ExtractedMediaStatus.PAUSED ->
+            Icons.Filled.Pause to MaterialTheme.colorScheme.onSurfaceVariant
+        ExtractedMediaStatus.STOPPED ->
+            Icons.Filled.Stop to MaterialTheme.colorScheme.onSurfaceVariant
+        ExtractedMediaStatus.COMPLETED ->
+            Icons.Filled.CheckCircleOutline to Color(0xFF4CAF50)
+        ExtractedMediaStatus.ERROR ->
+            Icons.Filled.ErrorOutline to MaterialTheme.colorScheme.error
     }
 }
 
@@ -415,4 +445,4 @@ private fun getDisplayName(url: String): String {
     } catch (e: Exception) {
         url.take(50) + if (url.length > 50) "..." else ""
     }
-} 
+}

@@ -13,7 +13,7 @@ data class VideoInfo(
     @SerialName("site") val site: String,
     @SerialName("streams") val streams: Map<String, StreamInfo>,
     @SerialName("extra") val extra: Map<String, String>,
-    @SerialName("request_headers") val requestHeaders: Map<String,String>
+    @SerialName("request_headers") val requestHeaders: Map<String, String>
 ) : Parcelable
 
 @Parcelize

@@ -46,16 +46,9 @@ import kotlinx.coroutines.withContext
 
 private fun showVideoInfo(src: String, videoInfo: VideoInfo) {
     BottomDialog.show(
-        object :
-            OnBindView<BottomDialog?>(R.layout.layout_compose) {
-            override fun onBind(
-                dialog: BottomDialog?,
-                v: View
-            ) {
-                val composeView =
-                    v.findViewById<ComposeView>(
-                        R.id.compose_view
-                    )
+        object : OnBindView<BottomDialog?>(R.layout.layout_compose) {
+            override fun onBind(dialog: BottomDialog?, v: View) {
+                val composeView = v.findViewById<ComposeView>(R.id.compose_view)
                 composeView.setContent {
                     VideoInfoView(src, videoInfo, { dialog?.dismiss() })
                 }
@@ -63,7 +56,6 @@ private fun showVideoInfo(src: String, videoInfo: VideoInfo) {
         }
     )
 }
-
 
 @Composable
 fun InputScreen(scope: CoroutineScope) {
@@ -75,10 +67,7 @@ fun InputScreen(scope: CoroutineScope) {
         scope.launch {
             analyzing = true
             withContext(Dispatchers.Default) {
-                UrlHandler.dealWithLink(
-                    context,
-                    link
-                ) {
+                UrlHandler.dealWithLink(context, link) {
                     showVideoInfo(link, it)
                 }
             }

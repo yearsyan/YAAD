@@ -47,7 +47,6 @@ import io.github.yaad.downloader_core.DownloadState
 import io.github.yaad.downloader_core.IDownloadListener
 import io.github.yaad.downloader_core.IDownloadSession
 import io.github.yearsyan.yaad.R
-import io.github.yearsyan.yaad.utils.FormatUtils
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -90,9 +89,7 @@ fun DownloadCard(
     val currentState = currentStatus.state
 
     Card(
-        modifier =
-            modifier
-                .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = MaterialTheme.shapes.medium
     ) {

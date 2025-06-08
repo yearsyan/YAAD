@@ -1,6 +1,5 @@
 package io.github.yearsyan.yaad.ui.components
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,16 +13,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import com.kongzue.dialogx.dialogs.PopNotification
-import io.github.yaad.downloader_core.getAppContext
 import io.github.yearsyan.yaad.downloader.DownloadManager
-import io.github.yearsyan.yaad.media.FFmpegTools
 import io.github.yearsyan.yaad.model.VideoInfo
 import io.github.yearsyan.yaad.utils.FileUtils
-import kotlinx.coroutines.Dispatchers
+import java.io.File
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 
 @Composable
 fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
@@ -81,22 +76,33 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
                     selectedQualityKey?.let { key -> videoInfo.streams[key] }
                 stream?.let {
                     val items = it.src.map { streamItem -> streamItem.get(0) }
-                    DownloadManager.addExtractedMediaDownloadTask(videoInfo.title, src, items, videoInfo.requestHeaders, { media ->
-                        GlobalScope.launch {
-                            val mergedFile = File(media)
-                            if (mergedFile.exists()) {
-                                val fileName = "${videoInfo.title}.mp4"
-                                val success = FileUtils.moveToDownloads(context, mergedFile, fileName)
-                                if (success) {
-                                    PopNotification.show("视频已保存到下载目录")
+                    DownloadManager.addExtractedMediaDownloadTask(
+                        videoInfo.title,
+                        src,
+                        items,
+                        videoInfo.requestHeaders,
+                        { media ->
+                            GlobalScope.launch {
+                                val mergedFile = File(media)
+                                if (mergedFile.exists()) {
+                                    val fileName = "${videoInfo.title}.mp4"
+                                    val success =
+                                        FileUtils.moveToDownloads(
+                                            context,
+                                            mergedFile,
+                                            fileName
+                                        )
+                                    if (success) {
+                                        PopNotification.show("视频已保存到下载目录")
+                                    } else {
+                                        PopNotification.show("移动到下载目录失败")
+                                    }
                                 } else {
-                                    PopNotification.show("移动到下载目录失败")
+                                    PopNotification.show("合并失败")
                                 }
-                            } else {
-                                PopNotification.show("合并失败")
                             }
                         }
-                    })
+                    )
                     finish()
                 }
             }

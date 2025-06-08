@@ -1,26 +1,20 @@
 package io.github.yearsyan.yaad.ui.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/**
- * 设置项组件
- */
+/** 设置项组件 */
 @Composable
 fun SettingsItem(
     title: String,
@@ -30,38 +24,32 @@ fun SettingsItem(
     onClick: (() -> Unit)? = null
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp)
-            .then(
-                if (onClick != null) {
-                    Modifier.clickable { onClick() }
-                } else {
-                    Modifier
-                }
-            ),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .then(
+                    if (onClick != null) {
+                        Modifier.clickable { onClick() }
+                    } else {
+                        Modifier
+                    }
+                ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (icon != null) {
                 Icon(
                     imageVector = icon,
                     contentDescription = null,
-                    modifier = Modifier
-                        .size(32.dp)
-                        .padding(end = 16.dp),
+                    modifier = Modifier.size(32.dp).padding(end = 16.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
-            
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
                     style = MaterialTheme.typography.bodyLarge,
@@ -76,7 +64,7 @@ fun SettingsItem(
                     )
                 }
             }
-            
+
             if (trailing != null) {
                 trailing()
             }
@@ -84,9 +72,7 @@ fun SettingsItem(
     }
 }
 
-/**
- * 设置分组标题
- */
+/** 设置分组标题 */
 @Composable
 fun SettingsGroupTitle(title: String) {
     Text(
@@ -94,15 +80,12 @@ fun SettingsGroupTitle(title: String) {
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+        modifier =
+            Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)
     )
 }
 
-/**
- * 开关设置项
- */
+/** 开关设置项 */
 @Composable
 fun SwitchSettingsItem(
     title: String,
@@ -116,17 +99,12 @@ fun SwitchSettingsItem(
         subtitle = subtitle,
         icon = icon,
         trailing = {
-            Switch(
-                checked = checked,
-                onCheckedChange = onCheckedChange
-            )
+            Switch(checked = checked, onCheckedChange = onCheckedChange)
         }
     )
 }
 
-/**
- * 滑块设置项
- */
+/** 滑块设置项 */
 @Composable
 fun SliderSettingsItem(
     title: String,
@@ -139,33 +117,23 @@ fun SliderSettingsItem(
     valueFormatter: (Float) -> String = { it.toInt().toString() }
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .padding(end = 16.dp),
+                        modifier = Modifier.size(32.dp).padding(end = 16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.bodyLarge,
@@ -180,7 +148,7 @@ fun SliderSettingsItem(
                         )
                     }
                 }
-                
+
                 Text(
                     text = valueFormatter(value),
                     style = MaterialTheme.typography.bodyMedium,
@@ -188,9 +156,9 @@ fun SliderSettingsItem(
                     color = MaterialTheme.colorScheme.primary
                 )
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             Slider(
                 value = value,
                 onValueChange = onValueChange,
@@ -202,9 +170,7 @@ fun SliderSettingsItem(
     }
 }
 
-/**
- * 输入框设置项
- */
+/** 输入框设置项 */
 @Composable
 fun TextFieldSettingsItem(
     title: String,
@@ -217,30 +183,22 @@ fun TextFieldSettingsItem(
     singleLine: Boolean = true
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .padding(end = 16.dp),
+                        modifier = Modifier.size(32.dp).padding(end = 16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                
+
                 Column {
                     Text(
                         text = title,
@@ -257,9 +215,9 @@ fun TextFieldSettingsItem(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             OutlinedTextField(
                 value = value,
                 onValueChange = onValueChange,
@@ -272,9 +230,7 @@ fun TextFieldSettingsItem(
     }
 }
 
-/**
- * 单选设置项
- */
+/** 单选设置项 */
 @Composable
 fun <T> RadioGroupSettingsItem(
     title: String,
@@ -285,30 +241,22 @@ fun <T> RadioGroupSettingsItem(
     onOptionSelected: (T) -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 if (icon != null) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(32.dp)
-                            .padding(end = 16.dp),
+                        modifier = Modifier.size(32.dp).padding(end = 16.dp),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
-                
+
                 Column {
                     Text(
                         text = title,
@@ -325,15 +273,15 @@ fun <T> RadioGroupSettingsItem(
                     }
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             options.forEach { (option, label) ->
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onOptionSelected(option) }
-                        .padding(vertical = 4.dp),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .clickable { onOptionSelected(option) }
+                            .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     RadioButton(
@@ -349,4 +297,4 @@ fun <T> RadioGroupSettingsItem(
             }
         }
     }
-} 
+}

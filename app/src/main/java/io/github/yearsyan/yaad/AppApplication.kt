@@ -28,7 +28,7 @@ class AppApplication : Application() {
     private fun initForMainProcess() {
         // 初始化MMKV
         MMKV.initialize(this)
-        
+
         DialogX.init(this)
         DialogX.globalStyle = MaterialStyle()
         DialogX.globalTheme = DialogX.THEME.AUTO

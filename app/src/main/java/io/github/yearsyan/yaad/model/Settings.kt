@@ -2,18 +2,14 @@ package io.github.yearsyan.yaad.model
 
 import kotlinx.serialization.Serializable
 
-/**
- * FFmpeg安装类型
- */
+/** FFmpeg安装类型 */
 enum class FFmpegInstallType {
-    BUILTIN,    // 内置
-    DOWNLOAD,   // 下载
-    CUSTOM_URL  // 自定义URL
+    BUILTIN, // 内置
+    DOWNLOAD, // 下载
+    CUSTOM_URL // 自定义URL
 }
 
-/**
- * 应用设置数据类
- */
+/** 应用设置数据类 */
 @Serializable
 data class AppSettings(
     val ffmpegInstallType: FFmpegInstallType = FFmpegInstallType.BUILTIN,
@@ -27,11 +23,5 @@ data class AppSettings(
     val autoRetryCount: Int = 3
 )
 
-/**
- * Cookie文件信息
- */
-@Serializable
-data class CookieFileInfo(
-    val name: String,
-    val path: String
-) 
+/** Cookie文件信息 */
+@Serializable data class CookieFileInfo(val name: String, val path: String)

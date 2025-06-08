@@ -3,7 +3,6 @@ package io.github.yearsyan.yaad.services
 import android.content.*
 import android.os.*
 import android.util.Log
-import io.github.yaad.downloader_core.getAppContext
 import io.github.yearsyan.yaad.IExtractorService
 import io.github.yearsyan.yaad.model.MediaResult
 import io.github.yearsyan.yaad.utils.SettingsManager
@@ -110,7 +109,7 @@ private constructor(private val applicationContext: Context) {
             return null
         }
 
-        val options = mutableMapOf<String,String>()
+        val options = mutableMapOf<String, String>()
         SettingsManager.getInstance(context).getCurrentCookieFile()?.let {
             options.put("--cookies", it.path)
         }
@@ -124,10 +123,7 @@ private constructor(private val applicationContext: Context) {
                     "ExtractorClient",
                     "Calling extractDownloadMedia for: $url"
                 )
-                extractorService?.extractDownloadMedia(
-                    url,
-                    options
-                )
+                extractorService?.extractDownloadMedia(url, options)
             } catch (e: RemoteException) {
                 Log.e(
                     "ExtractorClient",

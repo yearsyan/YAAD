@@ -15,38 +15,28 @@ import io.github.yearsyan.yaad.ui.components.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutSettingsScreen(
-    onNavigateBack: () -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
+fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
+    Column(modifier = Modifier.fillMaxSize()) {
         // 顶部应用栏
         TopAppBar(
-            title = { 
-                Text(
-                    text = "关于",
-                    fontWeight = FontWeight.Bold
-                )
-            },
+            title = { Text(text = "关于", fontWeight = FontWeight.Bold) },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回"
+                    )
                 }
             }
         )
-        
+
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxSize().padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            item {
-                SettingsGroupTitle("应用信息")
-            }
-            
+            item { SettingsGroupTitle("应用信息") }
+
             item {
                 SettingsItem(
                     title = "版本信息",
@@ -54,7 +44,7 @@ fun AboutSettingsScreen(
                     icon = Icons.Default.Info
                 )
             }
-            
+
             item {
                 SettingsItem(
                     title = "构建日期",
@@ -62,11 +52,9 @@ fun AboutSettingsScreen(
                     icon = Icons.Default.CalendarToday
                 )
             }
-            
-            item {
-                SettingsGroupTitle("开源信息")
-            }
-            
+
+            item { SettingsGroupTitle("开源信息") }
+
             item {
                 SettingsItem(
                     title = "开源许可",
@@ -80,7 +68,7 @@ fun AboutSettingsScreen(
                     }
                 )
             }
-            
+
             item {
                 SettingsItem(
                     title = "源代码",
@@ -94,23 +82,17 @@ fun AboutSettingsScreen(
                     }
                 )
             }
-            
-            item {
-                SettingsGroupTitle("技术栈")
-            }
-            
+
+            item { SettingsGroupTitle("技术栈") }
+
             item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    modifier =
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    elevation =
+                        CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Text(
                             text = "主要技术",
                             style = MaterialTheme.typography.titleMedium,
@@ -118,7 +100,8 @@ fun AboutSettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "• Kotlin & Jetpack Compose\n" +
+                            text =
+                                "• Kotlin & Jetpack Compose\n" +
                                     "• Material Design 3\n" +
                                     "• FFmpeg for Android\n" +
                                     "• MMKV for data storage\n" +
@@ -130,23 +113,17 @@ fun AboutSettingsScreen(
                     }
                 }
             }
-            
-            item {
-                SettingsGroupTitle("感谢")
-            }
-            
+
+            item { SettingsGroupTitle("感谢") }
+
             item {
                 Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    modifier =
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    elevation =
+                        CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Text(
                             text = "特别感谢",
                             style = MaterialTheme.typography.titleMedium,
@@ -154,7 +131,8 @@ fun AboutSettingsScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "• FFmpeg项目\n" +
+                            text =
+                                "• FFmpeg项目\n" +
                                     "• you-get项目\n" +
                                     "• Android开源社区\n" +
                                     "• 所有贡献者和用户",
@@ -166,4 +144,4 @@ fun AboutSettingsScreen(
             }
         }
     }
-} 
+}

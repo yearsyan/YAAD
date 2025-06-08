@@ -13,7 +13,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object UrlHandler {
-    suspend fun dealWithLink(context: Context, link: String, showExtractInfo: (extractInfo: VideoInfo) -> Unit) {
+    suspend fun dealWithLink(
+        context: Context,
+        link: String,
+        showExtractInfo: (extractInfo: VideoInfo) -> Unit
+    ) {
         if (link.startsWith("http://") || link.startsWith("https://")) {
             WaitDialog.show(R.string.url_extracting)
             try {
@@ -22,7 +26,8 @@ object UrlHandler {
                 Log.d("dealWithLink", "contentType: $contentType")
                 if (contentType.startsWith("text/html")) {
                     val resp =
-                        ExtractorClient.getInstance().extractMedia(context, link, mapOf())
+                        ExtractorClient.getInstance()
+                            .extractMedia(context, link, mapOf())
                     resp?.result?.let { result ->
                         withContext(Dispatchers.Main) {
                             WaitDialog.dismiss()
@@ -33,9 +38,7 @@ object UrlHandler {
                     DownloadManager.addHttpDownloadTask(
                         url = link,
                         headers = emptyMap(),
-                        startResultListener = { e ->
-                            WaitDialog.dismiss()
-                        }
+                        startResultListener = { e -> WaitDialog.dismiss() }
                     )
                 }
             } catch (e: Exception) {
@@ -52,5 +55,4 @@ object UrlHandler {
             PopTip.show(R.string.url_format_error)
         }
     }
-
 }

@@ -11,10 +11,8 @@ import com.chaquo.python.android.AndroidPlatform
 import io.github.yearsyan.yaad.IExtractorService
 import io.github.yearsyan.yaad.model.MediaResult
 import io.github.yearsyan.yaad.model.VideoInfo
-import kotlinx.serialization.encodeToString
 import java.io.File
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
 import org.json.JSONObject
 
 class ExtractorService : Service() {
@@ -38,7 +36,14 @@ class ExtractorService : Service() {
                 val absPath = File(filesDir, "you-get.zip").absolutePath
                 pyModule.callAttr("init_env", absPath)
                 val jsonStr =
-                    pyModule.callAttr("extract", absPath, url, JSONObject(options).toString().ifEmpty { "{}" }).toString()
+                    pyModule
+                        .callAttr(
+                            "extract",
+                            absPath,
+                            url,
+                            JSONObject(options).toString().ifEmpty { "{}" }
+                        )
+                        .toString()
                 Log.d("ExtractorService", "extract: $jsonStr")
                 val videoInfo = json.decodeFromString<VideoInfo>(jsonStr)
 

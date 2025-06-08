@@ -5,13 +5,13 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import io.github.yaad.downloader_core.DownloadState
+import io.github.yearsyan.yaad.downloader.DownloadManager.ChildHttpDownloadSessionRecord
 import io.github.yearsyan.yaad.downloader.DownloadManager.DownloadSessionRecord
 import io.github.yearsyan.yaad.downloader.DownloadManager.DownloadType
-import io.github.yearsyan.yaad.downloader.DownloadManager.SingleHttpDownloadSessionRecord
 import io.github.yearsyan.yaad.downloader.DownloadManager.ExtractedMediaDownloadSessionRecord
-import io.github.yearsyan.yaad.downloader.DownloadManager.ChildHttpDownloadSessionRecord
-import kotlinx.serialization.encodeToString
+import io.github.yearsyan.yaad.downloader.DownloadManager.SingleHttpDownloadSessionRecord
 import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
 class DownloadDatabaseHelper(context: Context) :
@@ -36,7 +36,8 @@ class DownloadDatabaseHelper(context: Context) :
     }
 
     override fun onCreate(db: SQLiteDatabase) {
-        db.execSQL("""
+        db.execSQL(
+            """
             CREATE TABLE $TABLE_DOWNLOAD_SESSIONS (
                 $COLUMN_SESSION_ID TEXT PRIMARY KEY,
                 $COLUMN_TITLE TEXT NOT NULL,
@@ -48,13 +49,20 @@ class DownloadDatabaseHelper(context: Context) :
                 $COLUMN_PARENT_SESSION_ID TEXT NOT NULL,
                 $COLUMN_DOWNLOAD_STATE TEXT NOT NULL
             )
-        """)
+        """
+        )
     }
 
-    override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+    override fun onUpgrade(
+        db: SQLiteDatabase,
+        oldVersion: Int,
+        newVersion: Int
+    ) {
         if (oldVersion < 2) {
             // 添加下载状态字段
-            db.execSQL("ALTER TABLE $TABLE_DOWNLOAD_SESSIONS ADD COLUMN $COLUMN_DOWNLOAD_STATE TEXT NOT NULL DEFAULT 'PENDING'")
+            db.execSQL(
+                "ALTER TABLE $TABLE_DOWNLOAD_SESSIONS ADD COLUMN $COLUMN_DOWNLOAD_STATE TEXT NOT NULL DEFAULT 'PENDING'"
+            )
         }
     }
 
@@ -68,27 +76,63 @@ class DownloadDatabaseHelper(context: Context) :
                 put(COLUMN_RECOVER_FILE, record.recoverFile)
                 put(COLUMN_SAVE_PATH, record.savePath)
                 put(COLUMN_TITLE, record.title)
-                
+
                 // 根据不同的记录类型获取下载状态
-                val downloadState = when (record) {
-                    is SingleHttpDownloadSessionRecord -> record.httpDownloadSession?.getStatus()?.state?.name ?: "PENDING"
-                    is ChildHttpDownloadSessionRecord -> record.httpDownloadSession?.getStatus()?.state?.name ?: "PENDING"
-                    is ExtractedMediaDownloadSessionRecord -> {
-                        // 对于 ExtractedMediaDownloadSessionRecord，检查所有子会话的状态
-                        if (record.childSessions.isEmpty()) "PENDING"
-                        else if (record.childSessions.all { it.httpDownloadSession?.getStatus()?.state == DownloadState.COMPLETED }) "COMPLETED"
-                        else if (record.childSessions.any { it.httpDownloadSession?.getStatus()?.state == DownloadState.DOWNLOADING }) "DOWNLOADING"
-                        else if (record.childSessions.any { it.httpDownloadSession?.getStatus()?.state == DownloadState.ERROR }) "ERROR"
-                        else if (record.childSessions.any { it.httpDownloadSession?.getStatus()?.state == DownloadState.PAUSED }) "PAUSED"
-                        else "PENDING"
+                val downloadState =
+                    when (record) {
+                        is SingleHttpDownloadSessionRecord ->
+                            record.httpDownloadSession?.getStatus()?.state?.name
+                                ?: "PENDING"
+                        is ChildHttpDownloadSessionRecord ->
+                            record.httpDownloadSession?.getStatus()?.state?.name
+                                ?: "PENDING"
+                        is ExtractedMediaDownloadSessionRecord -> {
+                            // 对于 ExtractedMediaDownloadSessionRecord，检查所有子会话的状态
+                            if (record.childSessions.isEmpty()) "PENDING"
+                            else if (
+                                record.childSessions.all {
+                                    it.httpDownloadSession
+                                        ?.getStatus()
+                                        ?.state == DownloadState.COMPLETED
+                                }
+                            )
+                                "COMPLETED"
+                            else if (
+                                record.childSessions.any {
+                                    it.httpDownloadSession
+                                        ?.getStatus()
+                                        ?.state == DownloadState.DOWNLOADING
+                                }
+                            )
+                                "DOWNLOADING"
+                            else if (
+                                record.childSessions.any {
+                                    it.httpDownloadSession
+                                        ?.getStatus()
+                                        ?.state == DownloadState.ERROR
+                                }
+                            )
+                                "ERROR"
+                            else if (
+                                record.childSessions.any {
+                                    it.httpDownloadSession
+                                        ?.getStatus()
+                                        ?.state == DownloadState.PAUSED
+                                }
+                            )
+                                "PAUSED"
+                            else "PENDING"
+                        }
+                        else -> "PENDING"
                     }
-                    else -> "PENDING"
-                }
                 put(COLUMN_DOWNLOAD_STATE, downloadState)
-                
+
                 when (record) {
                     is ExtractedMediaDownloadSessionRecord -> {
-                        put(COLUMN_MEDIA_URLS, json.encodeToString(record.mediaUrls))
+                        put(
+                            COLUMN_MEDIA_URLS,
+                            json.encodeToString(record.mediaUrls)
+                        )
                         put(COLUMN_PARENT_SESSION_ID, "")
                     }
                     is ChildHttpDownloadSessionRecord -> {
@@ -111,9 +155,8 @@ class DownloadDatabaseHelper(context: Context) :
 
     fun updateDownloadState(sessionId: String, state: DownloadState) {
         val db = this.writableDatabase
-        val values = ContentValues().apply {
-            put(COLUMN_DOWNLOAD_STATE, state.name)
-        }
+        val values =
+            ContentValues().apply { put(COLUMN_DOWNLOAD_STATE, state.name) }
         db.update(
             TABLE_DOWNLOAD_SESSIONS,
             values,
@@ -133,63 +176,82 @@ class DownloadDatabaseHelper(context: Context) :
 
     fun getAllDownloadSessions(): List<DownloadSessionRecord> {
         val db = this.readableDatabase
-        val cursor = db.query(
-            TABLE_DOWNLOAD_SESSIONS,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null
-        )
+        val cursor =
+            db.query(
+                TABLE_DOWNLOAD_SESSIONS,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+            )
 
         val records = mutableListOf<DownloadSessionRecord>()
         cursor.use {
             while (it.moveToNext()) {
-                val sessionId = it.getString(it.getColumnIndexOrThrow(COLUMN_SESSION_ID))
+                val sessionId =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_SESSION_ID))
                 val title = it.getString(it.getColumnIndexOrThrow(COLUMN_TITLE))
-                val downloadType = it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_TYPE))
-                val originLink = it.getString(it.getColumnIndexOrThrow(COLUMN_ORIGIN_LINK))
-                val recoverFile = it.getString(it.getColumnIndexOrThrow(COLUMN_RECOVER_FILE))
-                val savePath = it.getString(it.getColumnIndexOrThrow(COLUMN_SAVE_PATH))
-                val mediaUrls = it.getString(it.getColumnIndexOrThrow(COLUMN_MEDIA_URLS))
-                val parentSessionId = it.getString(it.getColumnIndexOrThrow(COLUMN_PARENT_SESSION_ID))
-                val downloadState = DownloadState.valueOf(it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)))
+                val downloadType =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_TYPE))
+                val originLink =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_ORIGIN_LINK))
+                val recoverFile =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_RECOVER_FILE))
+                val savePath =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_SAVE_PATH))
+                val mediaUrls =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_MEDIA_URLS))
+                val parentSessionId =
+                    it.getString(
+                        it.getColumnIndexOrThrow(COLUMN_PARENT_SESSION_ID)
+                    )
+                val downloadState =
+                    DownloadState.valueOf(
+                        it.getString(
+                            it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)
+                        )
+                    )
 
-                val record = when (DownloadType.valueOf(downloadType)) {
-                    DownloadType.SINGLE_HTTP -> {
-                        SingleHttpDownloadSessionRecord(
-                            title = title,
-                            sessionId = sessionId,
-                            originLink = originLink,
-                            recoverFile = recoverFile,
-                            savePath = savePath,
-                            downloadState = downloadState
-                        )
+                val record =
+                    when (DownloadType.valueOf(downloadType)) {
+                        DownloadType.SINGLE_HTTP -> {
+                            SingleHttpDownloadSessionRecord(
+                                title = title,
+                                sessionId = sessionId,
+                                originLink = originLink,
+                                recoverFile = recoverFile,
+                                savePath = savePath,
+                                downloadState = downloadState
+                            )
+                        }
+                        DownloadType.EXTRACTED_MEDIA -> {
+                            ExtractedMediaDownloadSessionRecord(
+                                title = title,
+                                sessionId = sessionId,
+                                originLink = originLink,
+                                recoverFile = recoverFile,
+                                mediaUrls =
+                                    if (mediaUrls.isNotEmpty())
+                                        json.decodeFromString(mediaUrls)
+                                    else emptyList(),
+                                downloadState
+                            )
+                        }
+                        DownloadType.CHILD_HTTP -> {
+                            ChildHttpDownloadSessionRecord(
+                                title = title,
+                                sessionId = sessionId,
+                                originLink = originLink,
+                                recoverFile = recoverFile,
+                                savePath = savePath,
+                                parentSessionId = parentSessionId,
+                                downloadState
+                            )
+                        }
+                        else -> null
                     }
-                    DownloadType.EXTRACTED_MEDIA -> {
-                        ExtractedMediaDownloadSessionRecord(
-                            title = title,
-                            sessionId = sessionId,
-                            originLink = originLink,
-                            recoverFile = recoverFile,
-                            mediaUrls = if (mediaUrls.isNotEmpty()) json.decodeFromString(mediaUrls) else emptyList(),
-                            downloadState
-                        )
-                    }
-                    DownloadType.CHILD_HTTP -> {
-                        ChildHttpDownloadSessionRecord(
-                            title = title,
-                            sessionId = sessionId,
-                            originLink = originLink,
-                            recoverFile = recoverFile,
-                            savePath = savePath,
-                            parentSessionId = parentSessionId,
-                            downloadState
-                        )
-                    }
-                    else -> null
-                }
                 record?.let { records.add(it) }
             }
         }
@@ -217,20 +279,27 @@ class DownloadDatabaseHelper(context: Context) :
                             it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_TYPE)
                         )
                     )
-                val title =
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_TITLE))
+                val title = it.getString(it.getColumnIndexOrThrow(COLUMN_TITLE))
                 val originLink =
                     it.getString(it.getColumnIndexOrThrow(COLUMN_ORIGIN_LINK))
                 val recoverFile =
                     it.getString(it.getColumnIndexOrThrow(COLUMN_RECOVER_FILE))
-                val savePath = 
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_SAVE_PATH)) ?: ""
-                val mediaUrlsJson = 
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_MEDIA_URLS)) ?: ""
-                val parentSessionId = 
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_PARENT_SESSION_ID)) ?: ""
+                val savePath =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_SAVE_PATH))
+                        ?: ""
+                val mediaUrlsJson =
+                    it.getString(it.getColumnIndexOrThrow(COLUMN_MEDIA_URLS))
+                        ?: ""
+                val parentSessionId =
+                    it.getString(
+                        it.getColumnIndexOrThrow(COLUMN_PARENT_SESSION_ID)
+                    ) ?: ""
                 val downloadState =
-                    DownloadState.valueOf(it.getString(it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)))
+                    DownloadState.valueOf(
+                        it.getString(
+                            it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)
+                        )
+                    )
 
                 return when (downloadType) {
                     DownloadType.SINGLE_HTTP ->
@@ -243,15 +312,18 @@ class DownloadDatabaseHelper(context: Context) :
                             downloadState
                         )
                     DownloadType.EXTRACTED_MEDIA -> {
-                        val mediaUrls = try {
-                            if (mediaUrlsJson.isNotEmpty()) {
-                                json.decodeFromString<List<String>>(mediaUrlsJson)
-                            } else {
-                                emptyList()
+                        val mediaUrls =
+                            try {
+                                if (mediaUrlsJson.isNotEmpty()) {
+                                    json.decodeFromString<List<String>>(
+                                        mediaUrlsJson
+                                    )
+                                } else {
+                                    emptyList()
+                                }
+                            } catch (e: Exception) {
+                                emptyList<String>()
                             }
-                        } catch (e: Exception) {
-                            emptyList<String>()
-                        }
                         ExtractedMediaDownloadSessionRecord(
                             title,
                             sessionId,

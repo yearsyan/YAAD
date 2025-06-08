@@ -21,33 +21,43 @@ import io.github.yearsyan.yaad.downloader.DownloadManager
 import kotlinx.coroutines.delay
 
 @Composable
-fun ExtractDownloadProgressBar(record: DownloadManager.ExtractedMediaDownloadSessionRecord, modifier: Modifier = Modifier) {
+fun ExtractDownloadProgressBar(
+    record: DownloadManager.ExtractedMediaDownloadSessionRecord,
+    modifier: Modifier = Modifier
+) {
     val radius = 4.dp
     val backgroundColor = ProgressIndicatorDefaults.linearTrackColor
     val indicatorColor = ProgressIndicatorDefaults.linearColor
-    val currentProgress by produceState(
-        initialValue = listOf()
-    ) {
-        while (true) {
-            value = record.childSessions.mapNotNull {
-                it.httpDownloadSession?.getStatus()
-            }.map {
-                Pair(it.totalDownloaded, it.totalSize)
+    val currentProgress by
+        produceState(initialValue = listOf()) {
+            while (true) {
+                value =
+                    record.childSessions
+                        .mapNotNull { it.httpDownloadSession?.getStatus() }
+                        .map { Pair(it.totalDownloaded, it.totalSize) }
+                if (record.downloadState == DownloadState.COMPLETED) {
+                    return@produceState
+                }
+                delay(200)
             }
-            if (record.downloadState == DownloadState.COMPLETED) {
-                return@produceState
-            }
-            delay(200)
         }
-    }
 
     Canvas(
         modifier =
-            modifier
-                .background(backgroundColor, shape = RoundedCornerShape(radius))
+            modifier.background(
+                backgroundColor,
+                shape = RoundedCornerShape(radius)
+            )
     ) {
-        if (currentProgress.isNotEmpty() && !currentProgress.any { it.second == 0L }) {
-            val widthPerByte = size.width / currentProgress.map { it.second }.reduce { acc, l -> acc + l }
+        if (
+            currentProgress.isNotEmpty() &&
+                !currentProgress.any { it.second == 0L }
+        ) {
+            val widthPerByte =
+                size.width /
+                    currentProgress
+                        .map { it.second }
+                        .reduce { acc, l -> acc + l }
             val radiusPx = radius.toPx()
             val path =
                 Path().apply {
@@ -72,6 +82,5 @@ fun ExtractDownloadProgressBar(record: DownloadManager.ExtractedMediaDownloadSes
                 }
             }
         }
-
     }
 }

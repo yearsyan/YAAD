@@ -2,13 +2,13 @@ package io.github.yearsyan.yaad.utils
 
 import android.content.Context
 import io.github.yaad.downloader_core.HttpDownloadSession
-import java.io.File
-import java.io.IOException
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.statement.bodyAsText
+import java.io.File
+import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -27,14 +27,16 @@ open class RepoRelease {
 
     fun getLatestVersion(): String? = runBlocking {
         try {
-            val response = client.get(releaseUrl) {
-                header("Accept", "application/vnd.github.v3+json")
-            }
+            val response =
+                client.get(releaseUrl) {
+                    header("Accept", "application/vnd.github.v3+json")
+                }
 
             if (response.status.value in 200..299) {
                 val body = response.bodyAsText()
                 val jsonObject = JSONObject(body)
-                jsonObject.optString("tag_name", null.toString())
+                jsonObject
+                    .optString("tag_name", null.toString())
                     .replaceFirst("^v".toRegex(), "")
             } else {
                 null

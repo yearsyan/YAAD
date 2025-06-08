@@ -2,8 +2,8 @@ package io.github.yearsyan.yaad.model
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 @Parcelize
 @Serializable

@@ -2,12 +2,11 @@ package io.github.yearsyan.yaad.utils
 
 import java.util.Locale
 
-/**
- * 格式化工具类
- */
+/** 格式化工具类 */
 object FormatUtils {
     /**
      * 格式化下载速度
+     *
      * @param speedKbps 速度（KB/s）
      * @return 格式化后的速度字符串
      */
@@ -22,4 +21,4 @@ object FormatUtils {
         }
         return String.format(Locale.getDefault(), "%.2f %s", value, units[i])
     }
-} 
+}
