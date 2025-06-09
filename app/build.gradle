@@ -72,6 +72,7 @@ android {
         compose true
         aidl true
         prefab true
+        buildConfig true
     }
 
     externalNativeBuild {
@@ -105,6 +106,7 @@ dependencies {
     implementation libs.zxing.core
     implementation libs.ffmpeg.tiny
     implementation project(':downloader-core')
+    implementation libs.material
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit

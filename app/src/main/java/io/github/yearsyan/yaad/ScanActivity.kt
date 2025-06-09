@@ -1,6 +1,7 @@
 package io.github.yearsyan.yaad
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -27,12 +28,20 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
+import android.app.Dialog
+import android.view.ViewGroup
+import android.view.WindowManager
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.zxing.MultiFormatReader
 import com.kongzue.dialogx.dialogs.PopTip
+import io.github.yearsyan.yaad.ui.components.QRResultDialogFragment
+import io.github.yearsyan.yaad.ui.components.QRResultView
 import io.github.yearsyan.yaad.ui.components.QRScanOverlay
 import io.github.yearsyan.yaad.utils.decodeQRCode
 import io.github.yearsyan.yaad.utils.yuvToBitmap
@@ -40,9 +49,12 @@ import java.util.concurrent.Executors
 import kotlin.math.abs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
-class ScanActivity : ComponentActivity() {
+class ScanActivity : FragmentActivity() {
 
     private lateinit var textureView: TextureView
     private lateinit var cameraManager: CameraManager
@@ -54,19 +66,25 @@ class ScanActivity : ComponentActivity() {
     private var decodeJob: Job? = null
     private var needDecode = true
     private var previewSurface: Surface? = null
+    private var flash = false
+    private var cameraConnected = false
+    private val decodeDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
 
     private val cameraStateCallback =
         object : CameraDevice.StateCallback() {
             override fun onOpened(camera: CameraDevice) {
                 cameraDevice = camera
+                cameraConnected = true
                 startPreview()
             }
 
             override fun onDisconnected(camera: CameraDevice) {
+                cameraConnected = false
                 camera.close()
             }
 
             override fun onError(camera: CameraDevice, error: Int) {
+                cameraConnected = false
                 camera.close()
                 Toast.makeText(
                         this@ScanActivity,
@@ -91,7 +109,9 @@ class ScanActivity : ComponentActivity() {
                 containerColor = Color.Transparent,
             ) { innerPadding ->
                 QRScanOverlay(
-                    modifier = Modifier.fillMaxSize().padding(innerPadding),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
                     onGallerySelected = { bitmap ->
                         val res = decodeQRCode(multiFormatReader, bitmap)
                         if (res == null) {
@@ -104,6 +124,7 @@ class ScanActivity : ComponentActivity() {
                     onToggleFlash = { flashOn ->
                         val requestBuilder =
                             createRequest(flashOn) ?: return@QRScanOverlay false
+                        flash = flashOn
                         captureSession?.setRepeatingRequest(
                             requestBuilder.build(),
                             null,
@@ -117,6 +138,13 @@ class ScanActivity : ComponentActivity() {
         cameraManager =
             getSystemService(Context.CAMERA_SERVICE) as CameraManager
         textureView.surfaceTextureListener = surfaceTextureListener
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (cameraDevice != null && !cameraConnected && checkCameraPermission()) {
+            openCamera()
+        }
     }
 
     private fun checkCameraPermission(): Boolean {
@@ -243,7 +271,6 @@ class ScanActivity : ComponentActivity() {
     private fun startPreview() {
         val cameraDev = cameraDevice ?: return
         val surfaceTexture = textureView.surfaceTexture ?: return
-        previewSurface = Surface(surfaceTexture)
         val characteristics =
             cameraManager.getCameraCharacteristics(cameraDev.id)
         val configMap =
@@ -260,9 +287,15 @@ class ScanActivity : ComponentActivity() {
                 abs(ratio - viewRatio)
             } ?: previewSizes[0]
 
-        surfaceTexture.setDefaultBufferSize(bestSize.width, bestSize.height)
-        configureTransform(textureView.width, textureView.height, bestSize)
-        imageReader =
+        previewSurface = if (previewSurface == null) {
+            surfaceTexture.setDefaultBufferSize(bestSize.width, bestSize.height)
+            configureTransform(textureView.width, textureView.height, bestSize)
+            Surface(surfaceTexture)
+        } else {
+            previewSurface
+        }
+
+        imageReader = imageReader ?:
             ImageReader.newInstance(
                 bestSize.width,
                 bestSize.height,
@@ -273,16 +306,24 @@ class ScanActivity : ComponentActivity() {
         imageReader?.setOnImageAvailableListener(
             { reader ->
                 if (decodeJob?.isActive == true || !needDecode) {
-                    reader.acquireLatestImage()?.close()
+                    try {
+                        reader.acquireLatestImage()?.close()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                     return@setOnImageAvailableListener
                 }
                 decodeJob =
-                    lifecycleScope.launch(Dispatchers.Default) {
-                        val image = reader.acquireLatestImage() ?: return@launch
-                        val bitmap = yuvToBitmap(image)
-                        image.close()
-                        decodeQRCode(multiFormatReader, bitmap)?.let {
-                            handleResult(it)
+                    lifecycleScope.launch(decodeDispatcher) {
+                        try {
+                            val image = reader.acquireLatestImage() ?: return@launch
+                            val bitmap = yuvToBitmap(image)
+                            image.close()
+                            decodeQRCode(multiFormatReader, bitmap)?.let {
+                                handleResult(it)
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
                         }
                     }
             },
@@ -290,7 +331,7 @@ class ScanActivity : ComponentActivity() {
         )
 
         try {
-            val previewRequestBuilder = createRequest(false) ?: return
+            val previewRequestBuilder = createRequest(flash) ?: return
             val surfaces = listOf(previewSurface, imageSurface)
             val stateCallback =
                 object : CameraCaptureSession.StateCallback() {
@@ -371,6 +412,22 @@ class ScanActivity : ComponentActivity() {
     }
 
     private fun handleResult(res: String) {
-        runOnUiThread { Toast.makeText(this, res, Toast.LENGTH_SHORT).show() }
+        runOnUiThread {
+            if (!needDecode) {
+                return@runOnUiThread
+            }
+            needDecode = false
+            cameraDevice?.close()
+            cameraConnected = false
+            QRResultDialogFragment.newInstance(res, {
+                lifecycleScope.launch(Dispatchers.Main) {
+                    if (cameraDevice != null && !cameraConnected && checkCameraPermission()) {
+                        openCamera()
+                    }
+                    delay(200)
+                    needDecode = true
+                }
+            }).show(supportFragmentManager, "ComposeDialog")
+        }
     }
 }

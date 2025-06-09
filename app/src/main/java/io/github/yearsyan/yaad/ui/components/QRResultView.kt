@@ -1,0 +1,157 @@
+package io.github.yearsyan.yaad.ui.components
+
+import android.animation.ValueAnimator
+import android.app.Dialog
+import android.content.DialogInterface
+import android.os.Build
+import android.os.Bundle
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.Window
+import android.view.WindowManager
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.WindowCompat
+import androidx.fragment.app.DialogFragment
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import io.github.yearsyan.yaad.R
+import io.github.yearsyan.yaad.utils.ClipboardUtils
+
+
+class QRResultDialogFragment(val onDismissListener: () -> Unit = {}) : DialogFragment() {
+    companion object {
+        private const val ARG_RESULT = "arg_result"
+
+        fun newInstance(result: String, onDismiss: () -> Unit = {}): QRResultDialogFragment {
+            return QRResultDialogFragment(onDismiss).apply {
+                arguments = Bundle().apply {
+                    putString(ARG_RESULT, result)
+                }
+            }
+        }
+    }
+
+    override fun onDismiss(dialog: DialogInterface) {
+        super.onDismiss(dialog)
+        onDismissListener()
+    }
+
+    override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
+        val result = requireArguments().getString(ARG_RESULT) ?: ""
+        return BottomSheetDialog(requireContext(), R.style.full_screen_dialog).also { dialog ->
+
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            dialog.window?.let {
+                WindowCompat.setDecorFitsSystemWindows(it, false)
+                it.setLayout(MATCH_PARENT, MATCH_PARENT)
+                it.setBackgroundDrawable(android.graphics.Color.TRANSPARENT.toDrawable())
+                it.addFlags(WindowManager.LayoutParams.FLAG_DIM_BEHIND)
+                it.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
+                it.addFlags(WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS)
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    val animator = ValueAnimator.ofInt(0, 13).apply {
+                        duration = 350
+                        addUpdateListener { animation ->
+                            if (!it.decorView.isAttachedToWindow) {
+                                cancel()
+                                return@addUpdateListener
+                            }
+                            val blurRadius = animation.animatedValue as Int * 5
+                            it.attributes.blurBehindRadius = blurRadius
+                            it.attributes = it.attributes
+                        }
+                    }
+
+                    dialog.setOnShowListener {
+                        animator.start()
+                    }
+                }
+            }
+            dialog.setContentView(R.layout.layout_compose)
+            dialog.findViewById<ComposeView>(R.id.compose_view)?.apply {
+                setContent {
+                    QRResultView(
+                        data = result
+                    )
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun QRResultView(data: String, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(150.dp),
+        shape = RoundedCornerShape(
+            topStart = 16.dp,
+            topEnd = 16.dp,
+            bottomStart = 0.dp,
+            bottomEnd = 0.dp
+        ),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
+    ) {
+        Box(modifier = Modifier.wrapContentSize()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "Scan Result",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = data,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.Black,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = {
+                            ClipboardUtils.writeText(context, data)
+                        },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ContentCopy,
+                            contentDescription = "Copy",
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+}

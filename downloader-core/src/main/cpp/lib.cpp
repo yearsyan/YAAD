@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <android/log.h>
+#include <libtorrent/session.hpp>
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "JNI", __VA_ARGS__)
 
@@ -121,6 +122,6 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         LOGI("Failed to register native methods");
         return JNI_ERR;
     }
-
+    libtorrent::session session;
     return JNI_VERSION_1_6;
 }
