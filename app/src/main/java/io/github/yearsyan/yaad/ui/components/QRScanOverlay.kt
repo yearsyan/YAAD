@@ -33,7 +33,8 @@ fun QRScanOverlay(
     onToggleFlash: (enable: Boolean) -> Boolean = { false },
     onBackClick: () -> Unit = {},
     onGallerySelected: (bitmap: Bitmap) -> Unit = {},
-    boxSize: Dp = 250.dp
+    boxSize: Dp = 250.dp,
+    hideScan: Boolean = false
 ) {
     // 扫描线动画
     val infiniteTransition = rememberInfiniteTransition()
@@ -77,64 +78,66 @@ fun QRScanOverlay(
 
     Box(modifier = modifier.fillMaxSize()) {
         // 绘制扫描线和扩散效果
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val canvasWidth = size.width
-            val canvasHeight = size.height
-            val boxWidth = boxSize.toPx()
-            val boxHeight = boxSize.toPx()
+        if (!hideScan) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                val canvasWidth = size.width
+                val canvasHeight = size.height
+                val boxWidth = boxSize.toPx()
+                val boxHeight = boxSize.toPx()
 
-            // 计算扫描框位置（居中）
-            val boxLeft = (canvasWidth - boxWidth) / 2
-            val boxTop = (canvasHeight - boxHeight) / 2
+                // 计算扫描框位置（居中）
+                val boxLeft = (canvasWidth - boxWidth) / 2
+                val boxTop = (canvasHeight - boxHeight) / 2
 
-            // 计算扫描线位置
-            val lineY = boxTop + (boxHeight * scanLinePosition)
+                // 计算扫描线位置
+                val lineY = boxTop + (boxHeight * scanLinePosition)
 
-            // 绘制扫描线（带渐变效果）
-            val lineGradient =
-                Brush.verticalGradient(
-                    colors =
-                        listOf(
-                            Color.Transparent,
-                            Color.White.copy(alpha = 0.8f),
-                            Color.White,
-                            Color.White.copy(alpha = 0.8f),
-                            Color.Transparent
-                        ),
-                    startY = lineY - 20f,
-                    endY = lineY + 20f
+                // 绘制扫描线（带渐变效果）
+                val lineGradient =
+                    Brush.verticalGradient(
+                        colors =
+                            listOf(
+                                Color.Transparent,
+                                Color.White.copy(alpha = 0.8f),
+                                Color.White,
+                                Color.White.copy(alpha = 0.8f),
+                                Color.Transparent
+                            ),
+                        startY = lineY - 20f,
+                        endY = lineY + 20f
+                    )
+
+                drawLine(
+                    brush = lineGradient,
+                    start = Offset(boxLeft, lineY),
+                    end = Offset(boxLeft + boxWidth, lineY),
+                    strokeWidth = 4.dp.toPx(),
+                    cap = StrokeCap.Round
                 )
 
-            drawLine(
-                brush = lineGradient,
-                start = Offset(boxLeft, lineY),
-                end = Offset(boxLeft + boxWidth, lineY),
-                strokeWidth = 4.dp.toPx(),
-                cap = StrokeCap.Round
-            )
+                // 绘制扫描线端点光效
+                drawCircle(
+                    brush =
+                        Brush.radialGradient(
+                            colors = listOf(Color.White, Color.Transparent),
+                            center = Offset(boxLeft, lineY),
+                            radius = 10.dp.toPx()
+                        ),
+                    center = Offset(boxLeft, lineY),
+                    radius = 10.dp.toPx()
+                )
 
-            // 绘制扫描线端点光效
-            drawCircle(
-                brush =
-                    Brush.radialGradient(
-                        colors = listOf(Color.White, Color.Transparent),
-                        center = Offset(boxLeft, lineY),
-                        radius = 10.dp.toPx()
-                    ),
-                center = Offset(boxLeft, lineY),
-                radius = 10.dp.toPx()
-            )
-
-            drawCircle(
-                brush =
-                    Brush.radialGradient(
-                        colors = listOf(Color.White, Color.Transparent),
-                        center = Offset(boxLeft + boxWidth, lineY),
-                        radius = 10.dp.toPx()
-                    ),
-                center = Offset(boxLeft + boxWidth, lineY),
-                radius = 10.dp.toPx()
-            )
+                drawCircle(
+                    brush =
+                        Brush.radialGradient(
+                            colors = listOf(Color.White, Color.Transparent),
+                            center = Offset(boxLeft + boxWidth, lineY),
+                            radius = 10.dp.toPx()
+                        ),
+                    center = Offset(boxLeft + boxWidth, lineY),
+                    radius = 10.dp.toPx()
+                )
+            }
         }
 
         // 返回按钮（左上角）

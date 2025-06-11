@@ -1,15 +1,20 @@
 package io.github.yearsyan.yaad.utils
 
+import android.webkit.URLUtil
+import io.github.yearsyan.yaad.services.UrlHandler
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.url
+import io.ktor.client.statement.bodyAsText
+import io.ktor.http.contentLength
 import io.ktor.http.contentType
 import java.net.URI
 import java.net.URL
 import java.net.URLDecoder
 import kotlinx.coroutines.cancel
+import kotlin.text.toLongOrNull
 
 data class FileInfo(
     val fileName: String,
@@ -17,6 +22,12 @@ data class FileInfo(
     val contentLength: Long?,
     val acceptRanges: Boolean,
     val chunked: Boolean
+)
+
+data class WebInfo(
+    val title: String,
+    val icon: String,
+    val description: String
 )
 
 fun parseOriginFromReferer(referer: String?): String? {
@@ -40,6 +51,53 @@ fun parseOriginFromReferer(referer: String?): String? {
     } catch (e: Exception) {
         null
     }
+}
+
+suspend fun getWebInfo(urlStr: String): WebInfo {
+    val client = UrlHandler.createClient()
+    val url = URL(urlStr)
+    val base = "${url.protocol}://${url.host}" + if (url.port != -1 && url.port != url.defaultPort) ":${url.port}" else ""
+    val bodyText = client.prepareGet(url).execute { response ->
+        val headers = response.headers
+        val contentLength = response.contentLength() ?: -1
+        val chunked: Boolean =
+            headers["Transfer-Encoding"]?.contains(
+                "chunked",
+                ignoreCase = true
+            ) == true
+        if (!chunked && contentLength > 1024 * 1024 * 16) {
+            throw RuntimeException("Body Size error")
+        }
+        if (response.status.value >= 400) {
+            throw RuntimeException("Http status error")
+        }
+        response.bodyAsText()
+    }
+    client.close()
+
+    // <title>
+    val titleRegex = Regex("<title>(.*?)</title>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+    val title = titleRegex.find(bodyText)?.groupValues?.get(1)?.trim()
+
+    // favicon
+    val faviconRegex = Regex("<link[^>]*rel=[\"']?(?:shortcut icon|icon)[\"']?[^>]*href=[\"']?([^\"'>\\s]+)[\"']?", RegexOption.IGNORE_CASE)
+    val favicon = faviconRegex.find(bodyText)?.groupValues?.get(1)?.let {
+        if (it.startsWith("http")) it
+        else URL(url, it).toString() // 处理相对路径
+    }
+
+    // itemprop="description"
+    val descRegex = Regex("<meta[^>]*itemprop=[\"']description[\"'][^>]*content=[\"'](.*?)[\"']", RegexOption.IGNORE_CASE)
+    val altDescRegex = Regex("<meta[^>]*name=[\"']description[\"'][^>]*content=[\"'](.*?)[\"']", RegexOption.IGNORE_CASE)
+
+    val description = descRegex.find(bodyText)?.groupValues?.get(1)
+        ?: altDescRegex.find(bodyText)?.groupValues?.get(1)
+
+    return WebInfo(
+        title = title ?: "unknown",
+        icon = favicon ?: "${base}/favicon.ico",
+        description = description ?: ""
+    )
 }
 
 suspend fun getFileInfo(url: String): FileInfo {

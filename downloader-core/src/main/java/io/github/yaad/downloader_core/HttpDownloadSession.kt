@@ -101,13 +101,6 @@ class HttpDownloadSession(
 
         private val defaultHeaders = mapOf("User-Agent" to getSystemUserAgent())
 
-        private fun getSystemUserAgent(): String {
-            return try {
-                WebSettings.getDefaultUserAgent(getAppContext())
-            } catch (e: Exception) {
-                "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36"
-            }
-        }
 
         private fun normalizeHeaderKey(key: String): String {
             return key.split("-").joinToString("-") { word ->

@@ -1,7 +1,6 @@
 package io.github.yearsyan.yaad
 
 import android.Manifest
-import android.animation.ValueAnimator
 import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
@@ -19,29 +18,25 @@ import android.util.Size
 import android.view.Surface
 import android.view.TextureView
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
-import android.app.Dialog
-import android.view.ViewGroup
-import android.view.WindowManager
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.zxing.MultiFormatReader
 import com.kongzue.dialogx.dialogs.PopTip
 import io.github.yearsyan.yaad.ui.components.QRResultDialogFragment
-import io.github.yearsyan.yaad.ui.components.QRResultView
 import io.github.yearsyan.yaad.ui.components.QRScanOverlay
 import io.github.yearsyan.yaad.utils.decodeQRCode
 import io.github.yearsyan.yaad.utils.yuvToBitmap
@@ -52,7 +47,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 class ScanActivity : FragmentActivity() {
 
@@ -68,7 +62,10 @@ class ScanActivity : FragmentActivity() {
     private var previewSurface: Surface? = null
     private var flash = false
     private var cameraConnected = false
-    private val decodeDispatcher = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+    private val decodeDispatcher =
+        Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+
+    private var dialogShowing by mutableStateOf(false)
 
     private val cameraStateCallback =
         object : CameraDevice.StateCallback() {
@@ -109,9 +106,8 @@ class ScanActivity : FragmentActivity() {
                 containerColor = Color.Transparent,
             ) { innerPadding ->
                 QRScanOverlay(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(innerPadding),
+                    hideScan = dialogShowing,
+                    modifier = Modifier.fillMaxSize().padding(innerPadding),
                     onGallerySelected = { bitmap ->
                         val res = decodeQRCode(multiFormatReader, bitmap)
                         if (res == null) {
@@ -142,7 +138,9 @@ class ScanActivity : FragmentActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (cameraDevice != null && !cameraConnected && checkCameraPermission()) {
+        if (
+            cameraDevice != null && !cameraConnected && checkCameraPermission()
+        ) {
             openCamera()
         }
     }
@@ -287,21 +285,30 @@ class ScanActivity : FragmentActivity() {
                 abs(ratio - viewRatio)
             } ?: previewSizes[0]
 
-        previewSurface = if (previewSurface == null) {
-            surfaceTexture.setDefaultBufferSize(bestSize.width, bestSize.height)
-            configureTransform(textureView.width, textureView.height, bestSize)
-            Surface(surfaceTexture)
-        } else {
-            previewSurface
-        }
+        previewSurface =
+            if (previewSurface == null) {
+                surfaceTexture.setDefaultBufferSize(
+                    bestSize.width,
+                    bestSize.height
+                )
+                configureTransform(
+                    textureView.width,
+                    textureView.height,
+                    bestSize
+                )
+                Surface(surfaceTexture)
+            } else {
+                previewSurface
+            }
 
-        imageReader = imageReader ?:
-            ImageReader.newInstance(
-                bestSize.width,
-                bestSize.height,
-                ImageFormat.YUV_420_888,
-                2
-            )
+        imageReader =
+            imageReader
+                ?: ImageReader.newInstance(
+                    bestSize.width,
+                    bestSize.height,
+                    ImageFormat.YUV_420_888,
+                    2
+                )
         val imageSurface = imageReader?.surface ?: return
         imageReader?.setOnImageAvailableListener(
             { reader ->
@@ -316,7 +323,8 @@ class ScanActivity : FragmentActivity() {
                 decodeJob =
                     lifecycleScope.launch(decodeDispatcher) {
                         try {
-                            val image = reader.acquireLatestImage() ?: return@launch
+                            val image =
+                                reader.acquireLatestImage() ?: return@launch
                             val bitmap = yuvToBitmap(image)
                             image.close()
                             decodeQRCode(multiFormatReader, bitmap)?.let {
@@ -417,17 +425,25 @@ class ScanActivity : FragmentActivity() {
                 return@runOnUiThread
             }
             needDecode = false
-            cameraDevice?.close()
-            cameraConnected = false
-            QRResultDialogFragment.newInstance(res, {
-                lifecycleScope.launch(Dispatchers.Main) {
-                    if (cameraDevice != null && !cameraConnected && checkCameraPermission()) {
-                        openCamera()
+            dialogShowing = true
+            QRResultDialogFragment.newInstance(
+                    res,
+                    {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            dialogShowing = false
+                            if (
+                                cameraDevice != null &&
+                                    !cameraConnected &&
+                                    checkCameraPermission()
+                            ) {
+                                openCamera()
+                            }
+                            delay(200)
+                            needDecode = true
+                        }
                     }
-                    delay(200)
-                    needDecode = true
-                }
-            }).show(supportFragmentManager, "ComposeDialog")
+                )
+                .show(supportFragmentManager, "ComposeDialog")
         }
     }
 }

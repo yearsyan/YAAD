@@ -1,6 +1,7 @@
 package io.github.yaad.downloader_core
 
 import android.annotation.SuppressLint
+import android.webkit.WebSettings
 
 fun getFileName(url: String, defaultValue: String): String {
     return try {
@@ -23,5 +24,14 @@ fun getAppContext(): android.content.Context? {
         application.applicationContext
     } catch (e: Exception) {
         null
+    }
+}
+
+
+fun getSystemUserAgent(): String {
+    return try {
+        WebSettings.getDefaultUserAgent(getAppContext())
+    } catch (e: Exception) {
+        "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Mobile Safari/537.36"
     }
 }
