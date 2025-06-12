@@ -15,6 +15,9 @@ import io.github.yearsyan.yaad.utils.getFileInfo
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.compression.ContentEncoding
+import io.ktor.client.plugins.cookies.AcceptAllCookiesStorage
+import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.http.headers
 import java.net.URL
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +32,13 @@ object UrlHandler {
                 connectTimeoutMillis = 30_000
                 socketTimeoutMillis = 3600_000
             }
+            install(ContentEncoding) {
+                gzip()
+                deflate()
+            }
+            install(HttpCookies) {
+                storage = AcceptAllCookiesStorage()
+            }
             headers {
                 append("User-Agent", getSystemUserAgent())
             }
@@ -41,6 +51,7 @@ object UrlHandler {
             val url = URL(str)
             return url.protocol == "http" || url.protocol == "https"
         } catch (e: Exception) {
+            e.printStackTrace()
             return false
         }
     }

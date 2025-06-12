@@ -1,6 +1,8 @@
 package io.github.yearsyan.yaad.utils
 
+import android.util.Log
 import android.webkit.URLUtil
+import io.github.yaad.downloader_core.getSystemUserAgent
 import io.github.yearsyan.yaad.services.UrlHandler
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
@@ -10,6 +12,7 @@ import io.ktor.client.request.url
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.contentLength
 import io.ktor.http.contentType
+import io.ktor.http.headers
 import java.net.URI
 import java.net.URL
 import java.net.URLDecoder
@@ -54,10 +57,15 @@ fun parseOriginFromReferer(referer: String?): String? {
 }
 
 suspend fun getWebInfo(urlStr: String): WebInfo {
+    Log.d("user-agent", getSystemUserAgent())
     val client = UrlHandler.createClient()
     val url = URL(urlStr)
     val base = "${url.protocol}://${url.host}" + if (url.port != -1 && url.port != url.defaultPort) ":${url.port}" else ""
-    val bodyText = client.prepareGet(url).execute { response ->
+    val bodyText = client.prepareGet(url, {
+        headers {
+            append("Accept", "text/html,application/xhtml+xml,application/xml")
+        }
+    }).execute { response ->
         val headers = response.headers
         val contentLength = response.contentLength() ?: -1
         val chunked: Boolean =
@@ -66,7 +74,7 @@ suspend fun getWebInfo(urlStr: String): WebInfo {
                 ignoreCase = true
             ) == true
         if (!chunked && contentLength > 1024 * 1024 * 16) {
-            throw RuntimeException("Body Size error")
+            return@execute ""
         }
         if (response.status.value >= 400) {
             throw RuntimeException("Http status error")
@@ -74,6 +82,7 @@ suspend fun getWebInfo(urlStr: String): WebInfo {
         response.bodyAsText()
     }
     client.close()
+    Log.d("webInfo", bodyText)
 
     // <title>
     val titleRegex = Regex("<title>(.*?)</title>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))

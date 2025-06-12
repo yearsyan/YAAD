@@ -39,7 +39,8 @@ import io.github.yearsyan.yaad.utils.getWebInfo
 enum class PreviewState {
     Loading,
     Error,
-    Done
+    Done,
+    UnTrust
 }
 
 @Composable
@@ -54,6 +55,7 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
             webInfo = getWebInfo(url)
             state = PreviewState.Done
         } catch (e: Exception) {
+            e.printStackTrace()
             state = PreviewState.Error
         }
     }
@@ -218,12 +220,25 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                 }
 
                 PreviewState.Error -> {
-                    Text(
-                        text = "加载失败",
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.error
-                    )
+                    Column {
+                        Text(
+                            text = "加载失败",
+                            modifier = Modifier.padding(16.dp),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = url,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
+
+                PreviewState.UnTrust ->
+                    Text(
+                        text = url,
+                        style = MaterialTheme.typography.bodySmall
+                    )
             }
         }
 

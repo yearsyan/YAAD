@@ -29,6 +29,7 @@ androidx-material-icons-extended = { module = "androidx.compose.material:materia
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
 ffmpeg-tiny = { module = "io.github.yearsyan:ffmpeg-tiny", version.ref = "ffmpeg" }
+ktor-client-encoding = { module = "io.ktor:ktor-client-encoding", version.ref = "ktor" }
 libtorrent = { module = "io.github.yearsyan:libtorrent", version.ref = "libtorrent" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 dialogx = { module = "com.kongzue.dialogx:DialogX", version.ref = "dialogx" }
