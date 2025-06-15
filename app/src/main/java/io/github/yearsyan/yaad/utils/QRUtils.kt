@@ -1,17 +1,36 @@
 package io.github.yearsyan.yaad.utils
 
+import android.annotation.SuppressLint
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.media.Image
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import android.net.NetworkRequest
+import android.net.wifi.WifiConfiguration
+import android.net.wifi.WifiManager
+import android.net.wifi.WifiNetworkSpecifier
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.NotFoundException
 import com.google.zxing.RGBLuminanceSource
 import com.google.zxing.common.HybridBinarizer
 import java.io.ByteArrayOutputStream
+
+data class WifiInfo(
+    val ssid: String,
+    val password: String?,
+    val encryption: String, // WPA, WEP, nopass
+    val hidden: Boolean
+)
+
 
 fun yuvToBitmap(image: Image): Bitmap {
     val yBuffer = image.planes[0].buffer
@@ -53,4 +72,29 @@ fun decodeQRCode(reader: MultiFormatReader, bitmap: Bitmap): String? {
     } catch (e: NotFoundException) {
         null
     }
+}
+
+fun String.toWifiOrNull(): WifiInfo? {
+    if (!this.startsWith("WIFI:") || !this.endsWith(";")) return null
+
+    // ; for xiaomi
+    val content = this.removePrefix("WIFI:").removeSuffix(";;").removeSuffix(";")
+    val parts = content.split(";").mapNotNull {
+        if (it.contains(":")) {
+            val (key, value) = it.split(":", limit = 2)
+            key to value
+        } else null
+    }.toMap()
+
+    val type = parts["T"] ?: return null
+    val ssid = parts["S"] ?: return null
+    val password = parts["P"]
+    val hidden = parts["H"]?.lowercase() == "true"
+
+    return WifiInfo(
+        ssid = ssid,
+        password = if (type.lowercase() == "nopass") null else password,
+        encryption = type,
+        hidden = hidden
+    )
 }

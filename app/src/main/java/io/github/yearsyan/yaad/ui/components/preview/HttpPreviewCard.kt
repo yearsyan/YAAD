@@ -30,8 +30,7 @@ import io.github.yearsyan.yaad.utils.ClipboardUtils
 import kotlinx.coroutines.delay
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
-import com.kongzue.dialogx.DialogX
-import com.kongzue.dialogx.dialogs.MessageDialog
+import io.github.yearsyan.yaad.services.UrlHandler
 import io.github.yearsyan.yaad.ui.components.ShimmerPlaceholder
 import io.github.yearsyan.yaad.utils.WebInfo
 import io.github.yearsyan.yaad.utils.getWebInfo
@@ -46,14 +45,16 @@ enum class PreviewState {
 @Composable
 fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var state by remember { mutableStateOf(PreviewState.Loading) }
+    var state by remember { mutableStateOf(if (UrlHandler.isTrustHttpLink(url)) PreviewState.Loading else PreviewState.UnTrust) }
     var webInfo by remember { mutableStateOf<WebInfo?>(null) }
 
     LaunchedEffect(Unit) {
         delay(500)
         try {
-            webInfo = getWebInfo(url)
-            state = PreviewState.Done
+            if (state == PreviewState.Loading) {
+                webInfo = getWebInfo(url)
+                state = PreviewState.Done
+            }
         } catch (e: Exception) {
             e.printStackTrace()
             state = PreviewState.Error

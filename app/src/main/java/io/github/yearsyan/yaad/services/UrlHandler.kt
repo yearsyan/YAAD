@@ -1,5 +1,6 @@
 package io.github.yearsyan.yaad.services
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -7,11 +8,14 @@ import androidx.core.net.toUri
 import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.WaitDialog
+import com.tencent.mmkv.MMKV
 import io.github.yaad.downloader_core.getSystemUserAgent
 import io.github.yearsyan.yaad.R
+import io.github.yearsyan.yaad.db.BuildInTrustHost
 import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.model.VideoInfo
 import io.github.yearsyan.yaad.utils.getFileInfo
+import io.github.yearsyan.yaad.utils.toWifiOrNull
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
@@ -24,6 +28,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 object UrlHandler {
+
+    private val trustedHost = HashSet<String>()
 
     fun createClient(): HttpClient {
         return HttpClient(CIO) {
@@ -65,6 +71,44 @@ object UrlHandler {
         } catch (_: Exception) {
             return false
         }
+    }
+
+    fun isWifiShare(str: String): Boolean = str.toWifiOrNull() != null
+
+    fun getComponent(context: Context, str: String): ComponentName? {
+        try {
+            val uri = str.toUri()
+            val intent = Intent(Intent.ACTION_VIEW, uri)
+            val packageManager = context.packageManager
+            return intent.resolveActivity(packageManager)
+        } catch (_: Exception) {
+            return null
+        }
+    }
+
+    private fun ensureTrustLinkLoad() {
+        if (trustedHost.isNotEmpty()) {
+            return
+        }
+        val k = "trusted_host"
+        val mmkv = MMKV.defaultMMKV()
+        val set = mmkv.decodeStringSet(k)
+        if (set == null) {
+            mmkv.encode(k, HashSet(BuildInTrustHost))
+            trustedHost.addAll(BuildInTrustHost)
+        } else {
+            trustedHost.addAll(set)
+        }
+    }
+
+    fun isTrustHttpLink(url: String): Boolean {
+        return try {
+            ensureTrustLinkLoad()
+            trustedHost.contains(URL(url).host)
+        } catch (e: Exception)  {
+            false
+        }
+        return false
     }
 
     suspend fun dealWithLink(

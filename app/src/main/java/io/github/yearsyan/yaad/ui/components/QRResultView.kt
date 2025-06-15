@@ -24,7 +24,7 @@ import androidx.core.view.WindowCompat
 import androidx.fragment.app.DialogFragment
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import io.github.yearsyan.yaad.R
-import io.github.yearsyan.yaad.ui.components.preview.TextPreview
+import io.github.yearsyan.yaad.ui.components.preview.QrResultPreview
 
 class QRResultDialogFragment(val onDismissListener: () -> Unit = {}) :
     DialogFragment() {
@@ -103,6 +103,6 @@ fun QRResultView(data: String, modifier: Modifier = Modifier) {
             ),
         colors = CardDefaults.cardColors(containerColor = Color(0xFFE3F2FD))
     ) {
-        Box(modifier = Modifier.wrapContentSize()) { TextPreview(data = data) }
+        Box(modifier = Modifier.wrapContentSize()) { QrResultPreview(data = data) }
     }
 }
