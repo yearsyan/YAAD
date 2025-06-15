@@ -20,9 +20,9 @@ class MainActivity : ComponentActivity() {
         ) { permissions ->
             val allGranted = permissions.values.all { it }
             if (allGranted) {
-                PopNotification.show("存储权限已授予")
+                PopNotification.show(R.string.storage_permission_granted)
             } else {
-                PopNotification.show("存储权限被拒绝，可能影响文件下载功能")
+                PopNotification.show(R.string.storage_permission_denied)
             }
         }
 
@@ -40,9 +40,9 @@ class MainActivity : ComponentActivity() {
                     currentSettings.copy(enableNotifications = true)
                 settingsManager.saveSettings(newSettings)
 
-                PopNotification.show("通知权限已授予，通知功能已开启")
+                PopNotification.show(R.string.notification_permission_granted)
             } else {
-                PopNotification.show("通知权限被拒绝，无法显示下载完成通知")
+                PopNotification.show(R.string.notification_permission_denied)
             }
         }
 

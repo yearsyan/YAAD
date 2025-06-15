@@ -6,9 +6,11 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.utils.ClipboardUtils
 import io.github.yearsyan.yaad.utils.WifiInfo
 
@@ -25,7 +27,7 @@ fun WifiPreviewCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "WiFi信息",
+                text = stringResource(R.string.wifi_info),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -35,12 +37,12 @@ fun WifiPreviewCard(
                 style = MaterialTheme.typography.bodyLarge
             )
             Text(
-                text = "加密类型: ${wifiInfo.encryption}",
+                text = stringResource(R.string.encryption_type, wifiInfo.encryption),
                 style = MaterialTheme.typography.bodyMedium
             )
             wifiInfo.password?.let {
                 Text(
-                    text = "密码: $it",
+                    text = stringResource(R.string.password, it),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Spacer(modifier = Modifier.height(12.dp))
@@ -51,7 +53,7 @@ fun WifiPreviewCard(
                     IconButton(
                         onClick = { ClipboardUtils.writeText(context, it) }
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "复制密码")
+                        Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.copy_password))
                     }
                 }
             }

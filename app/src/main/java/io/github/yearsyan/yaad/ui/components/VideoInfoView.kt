@@ -11,8 +11,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kongzue.dialogx.dialogs.PopNotification
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.model.VideoInfo
 import io.github.yearsyan.yaad.utils.FileUtils
@@ -36,13 +38,13 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "标题：${videoInfo.title}",
+            stringResource(R.string.video_title, videoInfo.title),
             style = MaterialTheme.typography.titleLarge
         )
-        Text("来自：${videoInfo.site}", style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.video_source, videoInfo.site), style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text("选择清晰度：", style = MaterialTheme.typography.titleMedium)
+        Text(stringResource(R.string.select_quality), style = MaterialTheme.typography.titleMedium)
         LazyColumn(
             modifier =
                 Modifier.fillMaxWidth()
@@ -93,12 +95,12 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
                                             fileName
                                         )
                                     if (success) {
-                                        PopNotification.show("视频已保存到下载目录")
+                                        PopNotification.show(context.getString(R.string.video_saved))
                                     } else {
-                                        PopNotification.show("移动到下载目录失败")
+                                        PopNotification.show(context.getString(R.string.move_to_download_failed))
                                     }
                                 } else {
-                                    PopNotification.show("合并失败")
+                                    PopNotification.show(context.getString(R.string.merge_failed))
                                 }
                             }
                         }
@@ -107,7 +109,7 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
                 }
             }
         ) {
-            Text("下载")
+            Text(stringResource(R.string.download))
         }
     }
 }

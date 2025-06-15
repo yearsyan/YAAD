@@ -1,7 +1,7 @@
 package io.github.yearsyan.yaad.ui.components.preview
 
 import android.content.Intent
-import android.net.Uri
+import io.github.yearsyan.yaad.R
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -77,7 +78,7 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                 .height(IntrinsicSize.Min)
         ) {
             Text(
-                text = "来自二维码的链接",
+                text = stringResource(R.string.link_from_qrcode),
                 fontSize = 18.sp,
                 color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.align(Alignment.Center)
@@ -92,7 +93,7 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                 Icon(
                     Icons.Default.ContentCopy,
                     modifier = Modifier.size(20.dp),
-                    contentDescription = "复制"
+                    contentDescription = stringResource(R.string.copy)
                 )
             }
         }
@@ -176,7 +177,7 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                             ) {
                                 AsyncImage(
                                     model = it.icon,
-                                    contentDescription = "图标",
+                                    contentDescription = stringResource(R.string.icon),
                                     contentScale = ContentScale.Fit,
                                     modifier = Modifier
                                         .size(64.dp)
@@ -223,7 +224,7 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                 PreviewState.Error -> {
                     Column {
                         Text(
-                            text = "加载失败",
+                            text = stringResource(R.string.load_failed),
                             modifier = Modifier.padding(16.dp),
                             color = MaterialTheme.colorScheme.error
                         )

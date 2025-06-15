@@ -77,7 +77,6 @@ fun QRScanOverlay(
     var isFlashOn by remember { mutableStateOf(false) }
 
     Box(modifier = modifier.fillMaxSize()) {
-        // 绘制扫描线和扩散效果
         if (!hideScan) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val canvasWidth = size.width
@@ -85,14 +84,11 @@ fun QRScanOverlay(
                 val boxWidth = boxSize.toPx()
                 val boxHeight = boxSize.toPx()
 
-                // 计算扫描框位置（居中）
                 val boxLeft = (canvasWidth - boxWidth) / 2
                 val boxTop = (canvasHeight - boxHeight) / 2
 
-                // 计算扫描线位置
                 val lineY = boxTop + (boxHeight * scanLinePosition)
 
-                // 绘制扫描线（带渐变效果）
                 val lineGradient =
                     Brush.verticalGradient(
                         colors =
@@ -115,7 +111,6 @@ fun QRScanOverlay(
                     cap = StrokeCap.Round
                 )
 
-                // 绘制扫描线端点光效
                 drawCircle(
                     brush =
                         Brush.radialGradient(
@@ -140,7 +135,6 @@ fun QRScanOverlay(
             }
         }
 
-        // 返回按钮（左上角）
         IconButton(
             onClick = onBackClick,
             modifier =
