@@ -1,0 +1,58 @@
+import groovy.json.JsonOutput
+
+// 获取 Git 提交 Hash
+def getGitHash = {
+    try {
+        return providers.exec {
+            commandLine 'git', 'rev-parse', '--short', 'HEAD'
+        }.standardOutput.asText.get().trim()
+    } catch (Exception e) {
+        return "unknown"
+    }
+}
+
+def getUname = {
+    def osName = System.getProperty("os.name").toLowerCase()
+    try {
+        if (osName.contains("windows")) {
+            return providers.exec {
+                commandLine 'cmd', '/c', 'ver'
+            }.standardOutput.asText.get().trim()
+        }
+        return providers.exec {
+            commandLine 'uname', '-a'
+        }.standardOutput.asText.get().trim()
+    } catch (Exception e) {
+        return "unknown"
+    }
+}
+
+def generateBuildInfo = tasks.register("generateBuildInfo") {
+    // 使用新的layout API替代buildDir
+    def outputDir = layout.buildDirectory.dir("generated/source/buildInfo").get().asFile
+
+    outputs.dir(outputDir)
+
+    doLast {
+        def className = "BuildInfo"
+        def packageName = "io.github.yearsyan.yaad" // 替换为您的包名
+        def javaFile = new File(outputDir, "${packageName.replace('.', '/')}/${className}.java")
+        def configFile = rootProject.file("LICENSE").text
+
+        javaFile.parentFile.mkdirs()
+        javaFile.text = """package $packageName;
+
+public final class $className {
+    public static final String BUILD_TIME = "${new Date().format("yyyy-MM-dd HH:mm:ss Z")}";
+    public static final String GIT_HASH = "${getGitHash()}";
+    public static final String ACTOR = "${System.getenv("BUILD_ACTOR")}";
+    public static final String BUILD_MACHINE_USER = "${System.getenv("USER")}";
+    public static final String BUILD_MACHINE_HOST = "${System.getenv("HOST")}";
+    public static final String BUILD_MACHINE_UNAME = "${getUname()}";
+    public static final String LICENSE_STR = ${JsonOutput.toJson(configFile)};
+    
+    private $className() {}
+}
+"""
+    }
+}

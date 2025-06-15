@@ -116,6 +116,7 @@
         </activity>
 
         <activity android:name=".ScanActivity" android:exported="false"/>
+        <activity android:name=".web.WebViewActivity" android:exported="false"/>
 
         <service
             android:name=".services.ExtractorService"

@@ -70,4 +70,11 @@
     <string name="download">下载</string>
 
     <string name="no_download_tasks">暂无下载任务</string>
+    <string name="close_dialog">关闭</string>
+
+    <!-- WebView Menu -->
+    <string name="webview_menu_more">更多</string>
+    <string name="webview_menu_open_in_browser">在浏览器中打开</string>
+    <string name="webview_menu_refresh">刷新</string>
+    <string name="webview_menu_copy_link">复制链接</string>
 </resources>

@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,7 +8,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.parcelize)
 }
-
+apply from: "./buildInfo.gradle"
 
 android {
     namespace 'io.github.yearsyan.yaad'
@@ -85,7 +87,50 @@ android {
         pickFirst 'lib/x86_64/libc++_shared.so'
         pickFirst 'lib/arm64-v8a/libc++_shared.so'
     }
+
+
+    sourceSets {
+        main {
+            java.srcDirs += layout.buildDirectory.dir("generated/source/buildInfo")
+        }
+    }
 }
+
+clean {
+    delete layout.buildDirectory.dir("generated/source/buildInfo")
+}
+
+
+afterEvaluate {
+    android.applicationVariants.configureEach { variant ->
+        // 获取Java编译任务
+        def javaCompileTask = variant.javaCompileProvider.get()
+        javaCompileTask.dependsOn(generateBuildInfo)
+
+        // 尝试获取Kotlin编译任务（如果存在）
+        try {
+            def kotlinCompileTask = project.tasks.findByName("compile${variant.name.capitalize()}Kotlin")
+            if (kotlinCompileTask) {
+                kotlinCompileTask.dependsOn(generateBuildInfo)
+            }
+        } catch (Exception ignored) {
+            // 非Kotlin项目
+        }
+    }
+
+    // 替代方案：为所有Java编译任务添加依赖
+    tasks.withType(JavaCompile).configureEach {
+        it.dependsOn(generateBuildInfo)
+    }
+
+    // 如果使用Kotlin，为所有Kotlin编译任务添加依赖
+    if (project.plugins.hasPlugin('org.jetbrains.kotlin.android')) {
+        tasks.withType(KotlinCompile).configureEach {
+            it.dependsOn(generateBuildInfo)
+        }
+    }
+}
+
 
 dependencies {
 

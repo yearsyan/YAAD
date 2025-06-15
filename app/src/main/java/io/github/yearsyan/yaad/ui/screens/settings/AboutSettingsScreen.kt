@@ -1,5 +1,6 @@
 package io.github.yearsyan.yaad.ui.screens.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -9,13 +10,21 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.BuildConfig
+import io.github.yearsyan.yaad.BuildInfo
 import io.github.yearsyan.yaad.ui.components.*
+import io.github.yearsyan.yaad.web.WebViewActivity
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
+    val context = LocalContext.current
+    var showVersionDetail by remember { mutableStateOf(false) }
+    var showLicenseDetail by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxSize()) {
         // 顶部应用栏
         TopAppBar(
@@ -31,7 +40,9 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
         )
 
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
@@ -40,15 +51,18 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
             item {
                 SettingsItem(
                     title = "版本信息",
-                    subtitle = "YAAD v1.0.0",
-                    icon = Icons.Default.Info
+                    subtitle = "YAAD ${BuildConfig.VERSION_NAME} #${BuildInfo.GIT_HASH}",
+                    icon = Icons.Default.Info,
+                    onClick = {
+                        showVersionDetail = true
+                    }
                 )
             }
 
             item {
                 SettingsItem(
                     title = "构建日期",
-                    subtitle = "2024年12月",
+                    subtitle = BuildInfo.BUILD_TIME,
                     icon = Icons.Default.CalendarToday
                 )
             }
@@ -60,11 +74,8 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
                     title = "开源许可",
                     subtitle = "查看开源许可证",
                     icon = Icons.Default.Description,
-                    trailing = {
-                        Icon(
-                            Icons.Default.ChevronRight,
-                            contentDescription = null
-                        )
+                    onClick = {
+                        showLicenseDetail = true
                     }
                 )
             }
@@ -79,68 +90,46 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
                             Icons.AutoMirrored.Filled.OpenInNew,
                             contentDescription = null
                         )
+                    },
+                    onClick = {
+                        WebViewActivity.start(
+                            context = context,
+                            url = "https://github.com/yearsyan/YAAD"
+                        )
                     }
                 )
             }
+        }
+    }
 
-            item { SettingsGroupTitle("技术栈") }
 
-            item {
-                Card(
-                    modifier =
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    elevation =
-                        CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text(
-                            text = "主要技术",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text =
-                                "• Kotlin & Jetpack Compose\n" +
-                                    "• Material Design 3\n" +
-                                    "• FFmpeg for Android\n" +
-                                    "• MMKV for data storage\n" +
-                                    "• Ktor for networking\n" +
-                                    "• Python integration (Chaquopy)",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+    if (showVersionDetail) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showVersionDetail = false
+            },
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(12.dp)
+            ) {
+                Text("Builder user: ${BuildInfo.BUILD_MACHINE_USER}")
+                Text("Builder actor: ${BuildInfo.ACTOR}")
+                Text("Builder host: ${BuildInfo.BUILD_MACHINE_HOST}")
+                Text("Builder uname: ${BuildInfo.BUILD_MACHINE_UNAME}")
             }
+        }
+    }
 
-            item { SettingsGroupTitle("感谢") }
-
-            item {
-                Card(
-                    modifier =
-                        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-                    elevation =
-                        CardDefaults.cardElevation(defaultElevation = 2.dp)
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-                        Text(
-                            text = "特别感谢",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text =
-                                "• FFmpeg项目\n" +
-                                    "• you-get项目\n" +
-                                    "• Android开源社区\n" +
-                                    "• 所有贡献者和用户",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+    if (showLicenseDetail) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showLicenseDetail = false
+            },
+            containerColor = MaterialTheme.colorScheme.surface
+        ) {
+            Box (modifier = Modifier.padding(12.dp)){
+                Text(BuildInfo.LICENSE_STR)
             }
         }
     }

@@ -39,6 +39,7 @@ jobs:
         KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        BUILD_ACTOR: ${{ github.actor }}
       run: |
         echo "storePassword=$KEYSTORE_PASSWORD" >> app/keystore.properties
         echo "keyPassword=$KEY_PASSWORD" >> app/keystore.properties

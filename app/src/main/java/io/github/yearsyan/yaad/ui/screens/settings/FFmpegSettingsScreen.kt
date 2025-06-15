@@ -53,8 +53,8 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
                     options =
                         listOf(
                             FFmpegInstallType.BUILTIN to "内置版本",
-                            FFmpegInstallType.DOWNLOAD to "自动下载",
-                            FFmpegInstallType.CUSTOM_URL to "自定义URL"
+//                            FFmpegInstallType.DOWNLOAD to "自动下载",
+//                            FFmpegInstallType.CUSTOM_URL to "自定义URL"
                         ),
                     selectedOption = settings.ffmpegInstallType,
                     onOptionSelected = { type ->
