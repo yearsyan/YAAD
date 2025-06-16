@@ -6,19 +6,16 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.utils.ClipboardUtils
 import io.github.yearsyan.yaad.utils.WifiInfo
 
 @Composable
-fun WifiPreviewCard(
-    wifiInfo: WifiInfo,
-    modifier: Modifier = Modifier
-) {
+fun WifiPreviewCard(wifiInfo: WifiInfo, modifier: Modifier = Modifier) {
     val context = LocalContext.current
 
     Card(
@@ -37,7 +34,11 @@ fun WifiPreviewCard(
                 style = MaterialTheme.typography.bodyLarge
             )
             Text(
-                text = stringResource(R.string.encryption_type, wifiInfo.encryption),
+                text =
+                    stringResource(
+                        R.string.encryption_type,
+                        wifiInfo.encryption
+                    ),
                 style = MaterialTheme.typography.bodyMedium
             )
             wifiInfo.password?.let {
@@ -53,7 +54,11 @@ fun WifiPreviewCard(
                     IconButton(
                         onClick = { ClipboardUtils.writeText(context, it) }
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.copy_password))
+                        Icon(
+                            Icons.Default.ContentCopy,
+                            contentDescription =
+                                stringResource(R.string.copy_password)
+                        )
                     }
                 }
             }

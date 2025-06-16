@@ -3,6 +3,8 @@ package io.github.yearsyan.yaad.utils
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import com.kongzue.dialogx.dialogs.PopTip
+import io.github.yearsyan.yaad.R
 
 object ClipboardUtils {
     fun readText(context: Context): String {
@@ -25,12 +27,22 @@ object ClipboardUtils {
     fun writeText(
         context: Context,
         text: String,
-        label: String = "yaad_clipboard_text"
+        label: String = "yaad_clipboard_text",
+        showResultToast: Boolean = true
     ) {
-        val clipboard =
-            context.getSystemService(Context.CLIPBOARD_SERVICE)
-                as ClipboardManager
-        val clip = ClipData.newPlainText(label, text)
-        clipboard.setPrimaryClip(clip)
+        try {
+            val clipboard =
+                context.getSystemService(Context.CLIPBOARD_SERVICE)
+                    as ClipboardManager
+            val clip = ClipData.newPlainText(label, text)
+            clipboard.setPrimaryClip(clip)
+            if (showResultToast) {
+                PopTip.show(R.string.copy_success).iconSuccess()
+            }
+        } catch (e: Exception) {
+            if (showResultToast) {
+                PopTip.show(R.string.copy_fail).iconError()
+            }
+        }
     }
 }

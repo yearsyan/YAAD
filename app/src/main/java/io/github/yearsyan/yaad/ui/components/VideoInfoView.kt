@@ -19,8 +19,8 @@ import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.model.VideoInfo
 import io.github.yearsyan.yaad.utils.FileUtils
 import java.io.File
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
@@ -41,10 +41,16 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
             stringResource(R.string.video_title, videoInfo.title),
             style = MaterialTheme.typography.titleLarge
         )
-        Text(stringResource(R.string.video_source, videoInfo.site), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            stringResource(R.string.video_source, videoInfo.site),
+            style = MaterialTheme.typography.bodyLarge
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
-        Text(stringResource(R.string.select_quality), style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(R.string.select_quality),
+            style = MaterialTheme.typography.titleMedium
+        )
         LazyColumn(
             modifier =
                 Modifier.fillMaxWidth()
@@ -82,29 +88,34 @@ fun VideoInfoView(src: String, videoInfo: VideoInfo, finish: () -> Unit) {
                         videoInfo.title,
                         src,
                         items,
-                        videoInfo.requestHeaders,
-                        { media ->
-                            GlobalScope.launch {
-                                val mergedFile = File(media)
-                                if (mergedFile.exists()) {
-                                    val fileName = "${videoInfo.title}.mp4"
-                                    val success =
-                                        FileUtils.moveToDownloads(
-                                            context,
-                                            mergedFile,
-                                            fileName
-                                        )
-                                    if (success) {
-                                        PopNotification.show(context.getString(R.string.video_saved))
-                                    } else {
-                                        PopNotification.show(context.getString(R.string.move_to_download_failed))
-                                    }
-                                } else {
-                                    PopNotification.show(context.getString(R.string.merge_failed))
+                        videoInfo.requestHeaders
+                    ) { sessionRecord, media ->
+                        val mergedFile = File(media)
+                        if (mergedFile.exists()) {
+                            val fileName = "${videoInfo.title}.mp4"
+                            val success =
+                                withContext(Dispatchers.IO) {
+                                    FileUtils.moveToDownloads(
+                                        context,
+                                        mergedFile,
+                                        fileName
+                                    )
                                 }
-                            }
+                            PopNotification.show(
+                                context.getString(
+                                    if (success) {
+                                        R.string.video_saved
+                                    } else {
+                                        R.string.move_to_download_failed
+                                    }
+                                )
+                            )
+                        } else {
+                            PopNotification.show(
+                                context.getString(R.string.merge_failed)
+                            )
                         }
-                    )
+                    }
                     finish()
                 }
             }

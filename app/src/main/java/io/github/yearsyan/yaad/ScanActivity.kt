@@ -1,7 +1,6 @@
 package io.github.yearsyan.yaad
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.ImageFormat
 import android.graphics.Matrix
@@ -83,12 +82,6 @@ class ScanActivity : FragmentActivity() {
             override fun onError(camera: CameraDevice, error: Int) {
                 cameraConnected = false
                 camera.close()
-                Toast.makeText(
-                        this@ScanActivity,
-                        "Camera error",
-                        Toast.LENGTH_SHORT
-                    )
-                    .show()
             }
         }
 
@@ -111,7 +104,7 @@ class ScanActivity : FragmentActivity() {
                     onGallerySelected = { bitmap ->
                         val res = decodeQRCode(multiFormatReader, bitmap)
                         if (res == null) {
-                            PopTip.show("not found")
+                            PopTip.show(R.string.qr_code_not_found)
                         } else {
                             handleResult(res)
                         }
@@ -131,8 +124,7 @@ class ScanActivity : FragmentActivity() {
                 )
             }
         }
-        cameraManager =
-            getSystemService(Context.CAMERA_SERVICE) as CameraManager
+        cameraManager = getSystemService(CAMERA_SERVICE) as CameraManager
         textureView.surfaceTextureListener = surfaceTextureListener
     }
 
@@ -406,8 +398,7 @@ class ScanActivity : FragmentActivity() {
         ) {
             openCamera()
         } else {
-            Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT)
-                .show()
+            PopTip.show(R.string.camera_permission_denied).iconError()
             finish()
         }
     }

@@ -25,31 +25,33 @@ fun ShimmerPlaceholder(
     color: Color = MaterialTheme.colorScheme.surfaceVariant,
     shape: Shape = RoundedCornerShape(8.dp)
 ) {
-    val shimmerColors = listOf(
-        color.copy(alpha = 0.6f),
-        color.copy(alpha = 0.3f),
-        color.copy(alpha = 0.6f),
-    )
+    val shimmerColors =
+        listOf(
+            color.copy(alpha = 0.6f),
+            color.copy(alpha = 0.3f),
+            color.copy(alpha = 0.6f),
+        )
 
     val transition = rememberInfiniteTransition(label = "shimmer")
-    val xShimmer by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = 1000f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1200, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "xShimmer"
-    )
+    val xShimmer by
+        transition.animateFloat(
+            initialValue = 0f,
+            targetValue = 1000f,
+            animationSpec =
+                infiniteRepeatable(
+                    animation =
+                        tween(durationMillis = 1200, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+            label = "xShimmer"
+        )
 
-    val brush = Brush.linearGradient(
-        colors = shimmerColors,
-        start = Offset(xShimmer, 0f),
-        end = Offset(xShimmer + 300f, 0f)
-    )
+    val brush =
+        Brush.linearGradient(
+            colors = shimmerColors,
+            start = Offset(xShimmer, 0f),
+            end = Offset(xShimmer + 300f, 0f)
+        )
 
-    Spacer(
-        modifier = modifier
-            .background(brush, shape)
-    )
+    Spacer(modifier = modifier.background(brush, shape))
 }

@@ -1,7 +1,6 @@
 package io.github.yearsyan.yaad.utils
 
 import android.util.Log
-import android.webkit.URLUtil
 import io.github.yaad.downloader_core.getSystemUserAgent
 import io.github.yearsyan.yaad.services.UrlHandler
 import io.ktor.client.HttpClient
@@ -16,8 +15,8 @@ import io.ktor.http.headers
 import java.net.URI
 import java.net.URL
 import java.net.URLDecoder
-import kotlinx.coroutines.cancel
 import kotlin.text.toLongOrNull
+import kotlinx.coroutines.cancel
 
 data class FileInfo(
     val fileName: String,
@@ -60,47 +59,76 @@ suspend fun getWebInfo(urlStr: String): WebInfo {
     Log.d("user-agent", getSystemUserAgent())
     val client = UrlHandler.createClient()
     val url = URL(urlStr)
-    val base = "${url.protocol}://${url.host}" + if (url.port != -1 && url.port != url.defaultPort) ":${url.port}" else ""
-    val bodyText = client.prepareGet(url, {
-        headers {
-            append("Accept", "text/html,application/xhtml+xml,application/xml")
-        }
-    }).execute { response ->
-        val headers = response.headers
-        val contentLength = response.contentLength() ?: -1
-        val chunked: Boolean =
-            headers["Transfer-Encoding"]?.contains(
-                "chunked",
-                ignoreCase = true
-            ) == true
-        if (!chunked && contentLength > 1024 * 1024 * 16) {
-            return@execute ""
-        }
-        if (response.status.value >= 400) {
-            throw RuntimeException("Http status error")
-        }
-        response.bodyAsText()
-    }
+    val base =
+        "${url.protocol}://${url.host}" +
+            if (url.port != -1 && url.port != url.defaultPort) ":${url.port}"
+            else ""
+    val bodyText =
+        client
+            .prepareGet(
+                url,
+                {
+                    headers {
+                        append(
+                            "Accept",
+                            "text/html,application/xhtml+xml,application/xml"
+                        )
+                    }
+                }
+            )
+            .execute { response ->
+                val headers = response.headers
+                val contentLength = response.contentLength() ?: -1
+                val chunked: Boolean =
+                    headers["Transfer-Encoding"]?.contains(
+                        "chunked",
+                        ignoreCase = true
+                    ) == true
+                if (!chunked && contentLength > 1024 * 1024 * 16) {
+                    return@execute ""
+                }
+                if (response.status.value >= 400) {
+                    throw RuntimeException("Http status error")
+                }
+                response.bodyAsText()
+            }
     client.close()
     Log.d("webInfo", bodyText)
 
     // <title>
-    val titleRegex = Regex("<title>(.*?)</title>", setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL))
+    val titleRegex =
+        Regex(
+            "<title>(.*?)</title>",
+            setOf(RegexOption.IGNORE_CASE, RegexOption.DOT_MATCHES_ALL)
+        )
     val title = titleRegex.find(bodyText)?.groupValues?.get(1)?.trim()
 
     // favicon
-    val faviconRegex = Regex("<link[^>]*rel=[\"']?(?:shortcut icon|icon)[\"']?[^>]*href=[\"']?([^\"'>\\s]+)[\"']?", RegexOption.IGNORE_CASE)
-    val favicon = faviconRegex.find(bodyText)?.groupValues?.get(1)?.let {
-        if (it.startsWith("http")) it
-        else URL(url, it).toString() // 处理相对路径
-    }
+    val faviconRegex =
+        Regex(
+            "<link[^>]*rel=[\"']?(?:shortcut icon|icon)[\"']?[^>]*href=[\"']?([^\"'>\\s]+)[\"']?",
+            RegexOption.IGNORE_CASE
+        )
+    val favicon =
+        faviconRegex.find(bodyText)?.groupValues?.get(1)?.let {
+            if (it.startsWith("http")) it else URL(url, it).toString() // 处理相对路径
+        }
 
     // itemprop="description"
-    val descRegex = Regex("<meta[^>]*itemprop=[\"']description[\"'][^>]*content=[\"'](.*?)[\"']", RegexOption.IGNORE_CASE)
-    val altDescRegex = Regex("<meta[^>]*name=[\"']description[\"'][^>]*content=[\"'](.*?)[\"']", RegexOption.IGNORE_CASE)
+    val descRegex =
+        Regex(
+            "<meta[^>]*itemprop=[\"']description[\"'][^>]*content=[\"'](.*?)[\"']",
+            RegexOption.IGNORE_CASE
+        )
+    val altDescRegex =
+        Regex(
+            "<meta[^>]*name=[\"']description[\"'][^>]*content=[\"'](.*?)[\"']",
+            RegexOption.IGNORE_CASE
+        )
 
-    val description = descRegex.find(bodyText)?.groupValues?.get(1)
-        ?: altDescRegex.find(bodyText)?.groupValues?.get(1)
+    val description =
+        descRegex.find(bodyText)?.groupValues?.get(1)
+            ?: altDescRegex.find(bodyText)?.groupValues?.get(1)
 
     return WebInfo(
         title = title ?: "unknown",

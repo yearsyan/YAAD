@@ -47,7 +47,6 @@ public final class $className {
     public static final String GIT_HASH = "${getGitHash()}";
     public static final String ACTOR = "${System.getenv("BUILD_ACTOR")}";
     public static final String BUILD_MACHINE_USER = "${System.getenv("USER")}";
-    public static final String BUILD_MACHINE_HOST = "${System.getenv("HOST")}";
     public static final String BUILD_MACHINE_UNAME = "${getUname()}";
     public static final String LICENSE_STR = ${JsonOutput.toJson(configFile)};
     

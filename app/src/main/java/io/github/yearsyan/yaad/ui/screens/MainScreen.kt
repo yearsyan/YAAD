@@ -22,21 +22,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.LifecycleCoroutineScope
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadViewModel
 import io.github.yearsyan.yaad.ui.theme.YAADTheme
 
 data class BottomNavItem(
-    val label: String,
+    val label: Int,
     val icon: ImageVector,
     val route: String
 )
 
 val bottomNavItems =
     listOf(
-        BottomNavItem("Home", Icons.Default.Home, "home"),
-        BottomNavItem("Tasks", Icons.Default.SaveAlt, "tasks"),
-        BottomNavItem("Settings", Icons.Default.Settings, "settings")
+        BottomNavItem(R.string.nav_home, Icons.Default.Home, "home"),
+        BottomNavItem(R.string.nav_tasks, Icons.Default.SaveAlt, "tasks"),
+        BottomNavItem(R.string.nav_settings, Icons.Default.Settings, "settings")
     )
 
 @Composable
@@ -55,9 +57,13 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
                             selected = selectedIndex == index,
                             onClick = { selectedIndex = index },
                             icon = {
-                                Icon(item.icon, contentDescription = item.label)
+                                Icon(
+                                    item.icon,
+                                    contentDescription =
+                                        stringResource(item.label)
+                                )
                             },
-                            label = { Text(item.label) }
+                            label = { Text(stringResource(item.label)) }
                         )
                     }
                 }

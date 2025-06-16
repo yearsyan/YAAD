@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">YAAD</string>
+
+    <string name="nav_home">首页</string>
+    <string name="nav_tasks">任务</string>
+    <string name="nav_settings">设置</string>
+
     <string name="net_error">网络错误</string>
     <string name="download_fail">下载错误</string>
     <string name="missing_dep">环境不完整</string>
@@ -50,6 +55,7 @@
     <string name="storage_permission_denied">存储权限被拒绝，可能影响文件下载功能</string>
     <string name="notification_permission_granted">通知权限已授予，通知功能已开启</string>
     <string name="notification_permission_denied">"通知权限被拒绝，无法显示下载完成通知"</string>
+    <string name="camera_permission_denied">相机权限被拒绝</string>
 
     <string name="wifi_info">WiFi信息</string>
     <string name="encryption_type">加密类型: %1$s</string>
@@ -60,6 +66,10 @@
     <string name="copy">复制</string>
     <string name="icon">图标</string>
     <string name="load_failed">加载失败</string>
+    <string name="qr_code_not_found">未找到二维码</string>"
+
+    <string name="copy_success">复制成功</string>
+    <string name="copy_fail">复制失败</string>
 
     <string name="video_title">标题：%1$s</string>
     <string name="video_source">来自：%1$s</string>

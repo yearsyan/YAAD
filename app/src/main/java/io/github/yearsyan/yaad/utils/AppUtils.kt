@@ -15,10 +15,7 @@ fun ComponentName.getComponentInfo(context: Context): ComponentInfo? {
         val icon = activityInfo.loadIcon(pm)
         val label = activityInfo.loadLabel(pm)
         val appName = label.toString()
-        return ComponentInfo(
-            name = appName,
-            icon = icon
-        )
+        return ComponentInfo(name = appName, icon = icon)
     } catch (e: PackageManager.NameNotFoundException) {
         e.printStackTrace()
     }

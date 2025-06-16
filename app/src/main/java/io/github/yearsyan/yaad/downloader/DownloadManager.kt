@@ -1,6 +1,7 @@
 package io.github.yearsyan.yaad.downloader
 
 import android.app.Application
+import android.os.Environment
 import android.os.Looper
 import io.github.yaad.downloader_core.DownloadState
 import io.github.yaad.downloader_core.HttpDownloadSession
@@ -109,6 +110,7 @@ object DownloadManager : IDownloadListener {
         originLink: String,
         recoverFile: String,
         val mediaUrls: List<String>,
+        savePath: String = "",
         downloadState: DownloadState = DownloadState.PENDING
     ) :
         DownloadSessionRecord(
@@ -117,7 +119,7 @@ object DownloadManager : IDownloadListener {
             DownloadType.EXTRACTED_MEDIA,
             originLink,
             recoverFile,
-            "",
+            savePath,
             downloadState
         ) {
         val childSessions = mutableListOf<ChildHttpDownloadSessionRecord>()
@@ -306,7 +308,10 @@ object DownloadManager : IDownloadListener {
         originUrl: String,
         mediaUrls: List<String>,
         headers: Map<String, String> = emptyMap(),
-        onAllComplete: (saves: String) -> Unit = {}
+        onAllComplete:
+            suspend (session: DownloadSessionRecord, saves: String) -> Unit =
+            { i, v ->
+            }
     ): DownloadSessionRecord {
         val sessionId = UUID.randomUUID().toString()
         val recoverDir = File(context.filesDir, sessionId)
@@ -321,6 +326,8 @@ object DownloadManager : IDownloadListener {
                 originLink = originUrl,
                 recoverFile = recoverDir.absolutePath,
                 mediaUrls = mediaUrls,
+                savePath =
+                    "${Environment. getExternalStorageDirectory().path}/Download/${title}.mp4"
             )
 
         synchronized(downloadTasks) {
@@ -381,7 +388,7 @@ object DownloadManager : IDownloadListener {
                                         record.sessionId,
                                         DownloadState.COMPLETED
                                     )
-                                    onAllComplete(mergeAt)
+                                    onAllComplete(record, mergeAt)
                                     checkAndControlService()
                                 }
                             }

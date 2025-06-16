@@ -44,6 +44,7 @@ import io.github.yaad.downloader_core.DownloadState
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.utils.FormatUtils
+import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,7 +56,7 @@ fun ExtractedMediaDownloadCard(
     modifier: Modifier = Modifier,
     onRemove: (DownloadManager.ExtractedMediaDownloadSessionRecord) -> Unit =
         {},
-    onOpenFolder: (folderPath: String) -> Unit = {}
+    onOpenFile: (filePath: String) -> Unit = {}
 ) {
     // 获取实时状态
     val currentStatus by
@@ -206,7 +207,12 @@ fun ExtractedMediaDownloadCard(
                     }
                 },
                 onRemove = { scope.launch { onRemove(record) } },
-                onOpenFolder = { onOpenFolder(record.savePath) }
+                onOpenFile = {
+                    val file = File(record.savePath)
+                    if (file.exists()) {
+                        onOpenFile(file.absolutePath)
+                    }
+                }
             )
         }
     }
@@ -220,7 +226,7 @@ private fun ExtractedMediaActionButtons(
     onStopAll: () -> Unit,
     onRetryAll: () -> Unit,
     onRemove: () -> Unit,
-    onOpenFolder: () -> Unit
+    onOpenFile: () -> Unit
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -277,9 +283,9 @@ private fun ExtractedMediaActionButtons(
             }
             ExtractedMediaStatus.COMPLETED -> {
                 ExtractedMediaActionButton(
-                    "打开文件夹",
+                    "打开",
                     Icons.Filled.FileOpen,
-                    onOpenFolder,
+                    onOpenFile,
                     isPrimary = true
                 )
                 Spacer(modifier = Modifier.width(8.dp))

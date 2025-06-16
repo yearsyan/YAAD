@@ -1,7 +1,6 @@
 package io.github.yearsyan.yaad.ui.components.preview
 
 import android.content.Intent
-import io.github.yearsyan.yaad.R
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -27,14 +26,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import io.github.yearsyan.yaad.utils.ClipboardUtils
-import kotlinx.coroutines.delay
 import androidx.core.net.toUri
 import coil3.compose.AsyncImage
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.services.UrlHandler
 import io.github.yearsyan.yaad.ui.components.ShimmerPlaceholder
+import io.github.yearsyan.yaad.utils.ClipboardUtils
 import io.github.yearsyan.yaad.utils.WebInfo
 import io.github.yearsyan.yaad.utils.getWebInfo
+import kotlinx.coroutines.delay
 
 enum class PreviewState {
     Loading,
@@ -46,7 +46,12 @@ enum class PreviewState {
 @Composable
 fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var state by remember { mutableStateOf(if (UrlHandler.isTrustHttpLink(url)) PreviewState.Loading else PreviewState.UnTrust) }
+    var state by remember {
+        mutableStateOf(
+            if (UrlHandler.isTrustHttpLink(url)) PreviewState.Loading
+            else PreviewState.UnTrust
+        )
+    }
     var webInfo by remember { mutableStateOf<WebInfo?>(null) }
 
     LaunchedEffect(Unit) {
@@ -67,16 +72,10 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
     }
 
     Column(
-        modifier = modifier
-            .padding(16.dp)
-            .fillMaxWidth(),
+        modifier = modifier.padding(16.dp).fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(IntrinsicSize.Min)
-        ) {
+        Box(modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
             Text(
                 text = stringResource(R.string.link_from_qrcode),
                 fontSize = 18.sp,
@@ -85,9 +84,7 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
             )
 
             IconButton(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(32.dp),
+                modifier = Modifier.align(Alignment.CenterEnd).size(32.dp),
                 onClick = { ClipboardUtils.writeText(context, url) }
             ) {
                 Icon(
@@ -102,22 +99,18 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
 
         // 动画包裹
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(), // 关键动画
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            ),
+            modifier = Modifier.fillMaxWidth().animateContentSize(), // 关键动画
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme.secondaryContainer
+                ),
             onClick = onClickLink
         ) {
             when (state) {
                 PreviewState.Loading -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Row (
+                    Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
@@ -127,17 +120,17 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                                 modifier = Modifier.height(56.dp).width(56.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Column (
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
+                            Column(modifier = Modifier.fillMaxWidth()) {
                                 ShimmerPlaceholder(
                                     color = Color.White,
-                                    modifier = Modifier.height(24.dp).fillMaxWidth()
+                                    modifier =
+                                        Modifier.height(24.dp).fillMaxWidth()
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 ShimmerPlaceholder(
                                     color = Color.White,
-                                    modifier = Modifier.height(24.dp).fillMaxWidth()
+                                    modifier =
+                                        Modifier.height(24.dp).fillMaxWidth()
                                 )
                             }
                         }
@@ -161,54 +154,54 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                         }
                     }
                 }
-
                 PreviewState.Done -> {
                     Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(
-                                vertical = 8.dp,
-                                horizontal = 16.dp
-                            )
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(vertical = 8.dp, horizontal = 16.dp)
                     ) {
                         webInfo?.let {
-                            Row(
-                                modifier = Modifier.height(64.dp)
-                            ) {
+                            Row(modifier = Modifier.height(64.dp)) {
                                 AsyncImage(
                                     model = it.icon,
-                                    contentDescription = stringResource(R.string.icon),
+                                    contentDescription =
+                                        stringResource(R.string.icon),
                                     contentScale = ContentScale.Fit,
-                                    modifier = Modifier
-                                        .size(64.dp)
-                                        .clip(RoundedCornerShape(16.dp))
+                                    modifier =
+                                        Modifier.size(64.dp)
+                                            .clip(RoundedCornerShape(16.dp))
                                 )
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Column(
                                     modifier = Modifier.fillMaxSize(),
                                     horizontalAlignment = Alignment.Start,
-                                    verticalArrangement = Arrangement.SpaceBetween
+                                    verticalArrangement =
+                                        Arrangement.SpaceBetween
                                 ) {
                                     Text(
                                         text = it.title,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.titleSmall,
+                                        style =
+                                            MaterialTheme.typography.titleSmall,
                                     )
                                     Text(
                                         text = it.description,
                                         overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.bodySmall
+                                        style =
+                                            MaterialTheme.typography.bodySmall
                                     )
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(8.dp))
                             Spacer(
-                                modifier = Modifier
-                                    .height(1.dp)
-                                    .fillMaxWidth()
-                                    .background(MaterialTheme.colorScheme.background)
+                                modifier =
+                                    Modifier.height(1.dp)
+                                        .fillMaxWidth()
+                                        .background(
+                                            MaterialTheme.colorScheme.background
+                                        )
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -220,7 +213,6 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                         )
                     }
                 }
-
                 PreviewState.Error -> {
                     Column {
                         Text(
@@ -235,16 +227,11 @@ fun HttpPreviewCard(url: String, modifier: Modifier = Modifier) {
                         )
                     }
                 }
-
                 PreviewState.UnTrust ->
-                    Text(
-                        text = url,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Text(text = url, style = MaterialTheme.typography.bodySmall)
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
     }
 }
-

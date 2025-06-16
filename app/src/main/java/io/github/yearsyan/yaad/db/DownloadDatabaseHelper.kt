@@ -165,6 +165,17 @@ class DownloadDatabaseHelper(context: Context) :
         )
     }
 
+    fun updateSavePath(sessionId: String, savePath: String) {
+        val db = this.writableDatabase
+        val values = ContentValues().apply { put(COLUMN_SAVE_PATH, savePath) }
+        db.update(
+            TABLE_DOWNLOAD_SESSIONS,
+            values,
+            "$COLUMN_SESSION_ID = ?",
+            arrayOf(sessionId)
+        )
+    }
+
     fun deleteDownloadSession(sessionId: String) {
         val db = this.writableDatabase
         db.delete(
@@ -236,6 +247,7 @@ class DownloadDatabaseHelper(context: Context) :
                                     if (mediaUrls.isNotEmpty())
                                         json.decodeFromString(mediaUrls)
                                     else emptyList(),
+                                savePath = savePath,
                                 downloadState
                             )
                         }
@@ -330,6 +342,7 @@ class DownloadDatabaseHelper(context: Context) :
                             originLink,
                             recoverFile,
                             mediaUrls,
+                            savePath,
                             downloadState
                         )
                     }

@@ -1,22 +1,11 @@
 package io.github.yearsyan.yaad.utils
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageFormat
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.media.Image
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
-import android.net.NetworkRequest
-import android.net.wifi.WifiConfiguration
-import android.net.wifi.WifiManager
-import android.net.wifi.WifiNetworkSpecifier
-import android.os.Build
-import androidx.annotation.RequiresApi
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.MultiFormatReader
 import com.google.zxing.NotFoundException
@@ -30,7 +19,6 @@ data class WifiInfo(
     val encryption: String, // WPA, WEP, nopass
     val hidden: Boolean
 )
-
 
 fun yuvToBitmap(image: Image): Bitmap {
     val yBuffer = image.planes[0].buffer
@@ -78,13 +66,18 @@ fun String.toWifiOrNull(): WifiInfo? {
     if (!this.startsWith("WIFI:") || !this.endsWith(";")) return null
 
     // ; for xiaomi
-    val content = this.removePrefix("WIFI:").removeSuffix(";;").removeSuffix(";")
-    val parts = content.split(";").mapNotNull {
-        if (it.contains(":")) {
-            val (key, value) = it.split(":", limit = 2)
-            key to value
-        } else null
-    }.toMap()
+    val content =
+        this.removePrefix("WIFI:").removeSuffix(";;").removeSuffix(";")
+    val parts =
+        content
+            .split(";")
+            .mapNotNull {
+                if (it.contains(":")) {
+                    val (key, value) = it.split(":", limit = 2)
+                    key to value
+                } else null
+            }
+            .toMap()
 
     val type = parts["T"] ?: return null
     val ssid = parts["S"] ?: return null

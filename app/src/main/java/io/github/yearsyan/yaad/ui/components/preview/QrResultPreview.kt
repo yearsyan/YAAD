@@ -1,10 +1,8 @@
 package io.github.yearsyan.yaad.ui.components.preview
 
 import android.content.Context
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +16,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,19 +48,17 @@ fun getPreviewType(context: Context, data: String): PreviewType {
     return PreviewType.Text
 }
 
-
 @Composable
 fun TextPreview(text: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     Card(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
-    )  {
-        Column (
+    ) {
+        Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
             Text(
                 text = "来自二维码文本",
                 fontSize = 18.sp,
@@ -73,15 +68,14 @@ fun TextPreview(text: String, modifier: Modifier = Modifier) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Card(
-                modifier = Modifier
-                    .fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer
-                )
+                modifier = Modifier.fillMaxWidth(),
+                colors =
+                    CardDefaults.cardColors(
+                        containerColor =
+                            MaterialTheme.colorScheme.secondaryContainer
+                    )
             ) {
-                Box (
-                    modifier = Modifier.padding(12.dp)
-                ) {
+                Box(modifier = Modifier.padding(12.dp)) {
                     Text(
                         text = text,
                         style = MaterialTheme.typography.bodyMedium
@@ -91,14 +85,8 @@ fun TextPreview(text: String, modifier: Modifier = Modifier) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                onClick = {
-                    ClipboardUtils.writeText(context, text)
-                }
-            ) {
-                Row (
-                    verticalAlignment = Alignment.CenterVertically
-                ){
+            Button(onClick = { ClipboardUtils.writeText(context, text) }) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Default.ContentCopy,
                         modifier = Modifier.size(20.dp),
@@ -135,9 +123,7 @@ fun QrResultPreview(data: String, modifier: Modifier = Modifier) {
                 }
             }
             PreviewType.Wifi -> {
-                data.toWifiOrNull()?.let {
-                    WifiPreviewCard(it)
-                }
+                data.toWifiOrNull()?.let { WifiPreviewCard(it) }
             }
             PreviewType.Text -> TextPreview(data)
         }

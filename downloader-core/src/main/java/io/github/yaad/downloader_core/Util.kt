@@ -27,7 +27,6 @@ fun getAppContext(): android.content.Context? {
     }
 }
 
-
 fun getSystemUserAgent(): String {
     return try {
         WebSettings.getDefaultUserAgent(getAppContext())

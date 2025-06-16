@@ -8,6 +8,7 @@ import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
+import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
@@ -48,6 +49,7 @@ object FileUtils {
         }
 
     /** Android 10+使用MediaStore API移动文件到下载目录 */
+    @RequiresApi(Build.VERSION_CODES.Q)
     private fun moveToDownloadsWithMediaStore(
         context: Context,
         sourceFile: File,
@@ -91,7 +93,7 @@ object FileUtils {
                 // 删除源文件
                 sourceFile.delete()
                 true
-            } ?: false
+            } == true
         } catch (e: IOException) {
             e.printStackTrace()
             false

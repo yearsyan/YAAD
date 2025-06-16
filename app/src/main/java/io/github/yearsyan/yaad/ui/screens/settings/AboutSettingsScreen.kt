@@ -1,6 +1,5 @@
 package io.github.yearsyan.yaad.ui.screens.settings
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -17,7 +16,6 @@ import io.github.yearsyan.yaad.BuildConfig
 import io.github.yearsyan.yaad.BuildInfo
 import io.github.yearsyan.yaad.ui.components.*
 import io.github.yearsyan.yaad.web.WebViewActivity
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -40,9 +38,7 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
         )
 
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(vertical = 8.dp),
+            modifier = Modifier.fillMaxSize().padding(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
@@ -51,11 +47,9 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
             item {
                 SettingsItem(
                     title = "版本信息",
-                    subtitle = "YAAD ${BuildConfig.VERSION_NAME} #${BuildInfo.GIT_HASH}",
-                    icon = Icons.Default.Info,
-                    onClick = {
-                        showVersionDetail = true
-                    }
+                    subtitle =
+                        "YAAD ${BuildConfig.VERSION_NAME} #${BuildInfo.GIT_HASH}",
+                    icon = Icons.Default.Info
                 )
             }
 
@@ -63,7 +57,8 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
                 SettingsItem(
                     title = "构建日期",
                     subtitle = BuildInfo.BUILD_TIME,
-                    icon = Icons.Default.CalendarToday
+                    icon = Icons.Default.CalendarToday,
+                    onClick = { showVersionDetail = true }
                 )
             }
 
@@ -74,9 +69,7 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
                     title = "开源许可",
                     subtitle = "查看开源许可证",
                     icon = Icons.Default.Description,
-                    onClick = {
-                        showLicenseDetail = true
-                    }
+                    onClick = { showLicenseDetail = true }
                 )
             }
 
@@ -102,35 +95,28 @@ fun AboutSettingsScreen(onNavigateBack: () -> Unit) {
         }
     }
 
-
     if (showVersionDetail) {
         ModalBottomSheet(
-            onDismissRequest = {
-                showVersionDetail = false
-            },
+            onDismissRequest = { showVersionDetail = false },
             containerColor = MaterialTheme.colorScheme.surface
         ) {
-            Column(
-                modifier = Modifier.background(MaterialTheme.colorScheme.surface).padding(12.dp)
-            ) {
-                Text("Builder user: ${BuildInfo.BUILD_MACHINE_USER}")
-                Text("Builder actor: ${BuildInfo.ACTOR}")
-                Text("Builder host: ${BuildInfo.BUILD_MACHINE_HOST}")
-                Text("Builder uname: ${BuildInfo.BUILD_MACHINE_UNAME}")
-            }
+            InfoTable(
+                items =
+                    listOf(
+                        "Builder user" to BuildInfo.BUILD_MACHINE_USER,
+                        "Builder actor" to BuildInfo.ACTOR,
+                        "Builder uname" to BuildInfo.BUILD_MACHINE_UNAME
+                    )
+            )
         }
     }
 
     if (showLicenseDetail) {
         ModalBottomSheet(
-            onDismissRequest = {
-                showLicenseDetail = false
-            },
+            onDismissRequest = { showLicenseDetail = false },
             containerColor = MaterialTheme.colorScheme.surface
         ) {
-            Box (modifier = Modifier.padding(12.dp)){
-                Text(BuildInfo.LICENSE_STR)
-            }
+            LicenseModalList()
         }
     }
 }

@@ -11,10 +11,10 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -28,33 +28,31 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.windowInsetsTopHeight
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.ListItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import io.github.yearsyan.yaad.ui.theme.YAADTheme
@@ -62,21 +60,21 @@ import io.github.yearsyan.yaad.utils.ClipboardUtils
 
 @Composable
 fun WebViewTopBar(
-    title: String, 
-    onBackPressed: ()-> Unit,
+    title: String,
+    onBackPressed: () -> Unit,
     showMenu: Boolean = false,
     onMenuClick: () -> Unit = {}
 ) {
     Column {
-        Spacer(Modifier
-            .windowInsetsTopHeight(WindowInsets.statusBars)
-            .background(MaterialTheme.colorScheme.surface)
+        Spacer(
+            Modifier.windowInsetsTopHeight(WindowInsets.statusBars)
+                .background(MaterialTheme.colorScheme.surface)
         )
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(48.dp)
-                .background(MaterialTheme.colorScheme.surface),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(48.dp)
+                    .background(MaterialTheme.colorScheme.surface),
             contentAlignment = Alignment.CenterStart
         ) {
             Row(
@@ -84,13 +82,28 @@ fun WebViewTopBar(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 IconButton(onClick = onBackPressed) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back"
+                    )
                 }
-                Text(title, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall,
+                    maxLines = 1,
+                    modifier = Modifier.weight(1f),
+                    overflow = TextOverflow.Ellipsis
+                )
                 if (showMenu) {
-                    Spacer(modifier = Modifier.weight(1f))
                     IconButton(onClick = onMenuClick) {
-                        Icon(Icons.Default.MoreVert, contentDescription = stringResource(io.github.yearsyan.yaad.R.string.webview_menu_more))
+                        Icon(
+                            Icons.Default.MoreVert,
+                            contentDescription =
+                                stringResource(
+                                    io.github.yearsyan.yaad.R.string
+                                        .webview_menu_more
+                                )
+                        )
                     }
                 }
             }
@@ -114,25 +127,52 @@ fun WebViewMenu(
             modifier = Modifier.background(MaterialTheme.colorScheme.surface)
         ) {
             ListItem(
-                headlineContent = { Text(stringResource(io.github.yearsyan.yaad.R.string.webview_menu_open_in_browser)) },
-                leadingContent = { Icon(Icons.Default.OpenInBrowser, contentDescription = null) },
-                modifier = Modifier
-                    .clickable(onClick = onOpenInBrowser)
-                    .background(MaterialTheme.colorScheme.surface)
+                headlineContent = {
+                    Text(
+                        stringResource(
+                            io.github.yearsyan.yaad.R.string
+                                .webview_menu_open_in_browser
+                        )
+                    )
+                },
+                leadingContent = {
+                    Icon(Icons.Default.OpenInBrowser, contentDescription = null)
+                },
+                modifier =
+                    Modifier.clickable(onClick = onOpenInBrowser)
+                        .background(MaterialTheme.colorScheme.surface)
             )
             ListItem(
-                headlineContent = { Text(stringResource(io.github.yearsyan.yaad.R.string.webview_menu_refresh)) },
-                leadingContent = { Icon(Icons.Default.Refresh, contentDescription = null) },
-                modifier = Modifier
-                    .clickable(onClick = onRefresh)
-                    .background(MaterialTheme.colorScheme.surface)
+                headlineContent = {
+                    Text(
+                        stringResource(
+                            io.github.yearsyan.yaad.R.string
+                                .webview_menu_refresh
+                        )
+                    )
+                },
+                leadingContent = {
+                    Icon(Icons.Default.Refresh, contentDescription = null)
+                },
+                modifier =
+                    Modifier.clickable(onClick = onRefresh)
+                        .background(MaterialTheme.colorScheme.surface)
             )
             ListItem(
-                headlineContent = { Text(stringResource(io.github.yearsyan.yaad.R.string.webview_menu_copy_link)) },
-                leadingContent = { Icon(Icons.Default.ContentCopy, contentDescription = null) },
-                modifier = Modifier
-                    .clickable(onClick = onCopyLink)
-                    .background(MaterialTheme.colorScheme.surface)
+                headlineContent = {
+                    Text(
+                        stringResource(
+                            io.github.yearsyan.yaad.R.string
+                                .webview_menu_copy_link
+                        )
+                    )
+                },
+                leadingContent = {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null)
+                },
+                modifier =
+                    Modifier.clickable(onClick = onCopyLink)
+                        .background(MaterialTheme.colorScheme.surface)
             )
         }
     }
@@ -177,9 +217,7 @@ class WebViewActivity : ComponentActivity() {
                     Column(
                         modifier = Modifier.padding(innerPadding).fillMaxSize()
                     ) {
-                        Box(
-                            modifier = Modifier.fillMaxSize()
-                        ) {
+                        Box(modifier = Modifier.fillMaxSize()) {
                             AndroidView(
                                 modifier = Modifier.fillMaxSize(),
                                 factory = { context ->
@@ -197,7 +235,9 @@ class WebViewActivity : ComponentActivity() {
                                 ) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(48.dp),
-                                        color = MaterialTheme.colorScheme.onBackground,
+                                        color =
+                                            MaterialTheme.colorScheme
+                                                .onBackground,
                                         strokeWidth = 4.dp
                                     )
                                 }
@@ -209,7 +249,11 @@ class WebViewActivity : ComponentActivity() {
                         WebViewMenu(
                             onDismiss = { showBottomSheet = false },
                             onOpenInBrowser = {
-                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(currentUrl))
+                                val intent =
+                                    Intent(
+                                        Intent.ACTION_VIEW,
+                                        Uri.parse(currentUrl)
+                                    )
                                 startActivity(intent)
                                 showBottomSheet = false
                             },
@@ -218,7 +262,10 @@ class WebViewActivity : ComponentActivity() {
                                 showBottomSheet = false
                             },
                             onCopyLink = {
-                                ClipboardUtils.writeText(WebViewActivity@this, currentUrl)
+                                ClipboardUtils.writeText(
+                                    WebViewActivity@ this,
+                                    currentUrl
+                                )
                                 showBottomSheet = false
                             }
                         )
@@ -228,24 +275,25 @@ class WebViewActivity : ComponentActivity() {
         }
 
         // Handle predictive back gesture
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
-                    webView.goBack()
-                } else {
-                    isEnabled = false
-                    onBackPressedDispatcher.onBackPressed()
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (webView.canGoBack()) {
+                        webView.goBack()
+                    } else {
+                        isEnabled = false
+                        onBackPressedDispatcher.onBackPressed()
+                    }
                 }
             }
-        })
+        )
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private fun createWebView(): WebView {
         return WebView(this).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                MATCH_PARENT, MATCH_PARENT
-            )
+            layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
             settings.javaScriptEnabled = true
             webViewClient = WebViewClient()
             // Load URL from intent
@@ -255,29 +303,27 @@ class WebViewActivity : ComponentActivity() {
             }
             settings.domStorageEnabled = true
             // 设置 WebChromeClient 以获取标题
-            webChromeClient = object : WebChromeClient() {
-                override fun onReceivedTitle(view: WebView?, title: String?) {
-                    super.onReceivedTitle(view, title)
-                    title?.let {
-                        webTitle = title
+            webChromeClient =
+                object : WebChromeClient() {
+                    override fun onReceivedTitle(
+                        view: WebView?,
+                        title: String?
+                    ) {
+                        super.onReceivedTitle(view, title)
+                        title?.let { webTitle = title }
                     }
                 }
-            }
-            webViewClient = object : WebViewClient() {
-                override fun onPageFinished(
-                    view: WebView?,
-                    url: String?
-                ) {
-                    super.onPageFinished(view, url)
-                    if (showLoading) {
-                        showLoading = false
-                        webView.alpha = 1.0f
-                    }
-                    url?.let {
-                        currentUrl = it
+            webViewClient =
+                object : WebViewClient() {
+                    override fun onPageFinished(view: WebView?, url: String?) {
+                        super.onPageFinished(view, url)
+                        if (showLoading) {
+                            showLoading = false
+                            webView.alpha = 1.0f
+                        }
+                        url?.let { currentUrl = it }
                     }
                 }
-            }
         }
     }
 
@@ -287,15 +333,17 @@ class WebViewActivity : ComponentActivity() {
 
         /**
          * launch WebViewActivity
+         *
          * @param context
          * @param url
          * @param allowMenu Whether to show the menu button
          */
         fun start(context: Context, url: String, allowMenu: Boolean = true) {
-            val intent = Intent(context, WebViewActivity::class.java).apply {
-                putExtra(EXTRA_URL, url)
-                putExtra(EXTRA_ALLOW_MENU, allowMenu)
-            }
+            val intent =
+                Intent(context, WebViewActivity::class.java).apply {
+                    putExtra(EXTRA_URL, url)
+                    putExtra(EXTRA_ALLOW_MENU, allowMenu)
+                }
             context.startActivity(intent)
         }
     }

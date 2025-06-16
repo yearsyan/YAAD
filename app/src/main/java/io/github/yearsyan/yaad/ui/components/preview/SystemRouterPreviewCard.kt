@@ -18,10 +18,10 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import io.github.yearsyan.yaad.utils.ClipboardUtils
-import io.github.yearsyan.yaad.utils.ComponentInfo
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
+import io.github.yearsyan.yaad.utils.ClipboardUtils
+import io.github.yearsyan.yaad.utils.ComponentInfo
 
 @Composable
 fun SystemRouterPreviewCard(
@@ -30,25 +30,22 @@ fun SystemRouterPreviewCard(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val bitmap = remember(componentInfo.icon) {
-        val drawable = componentInfo.icon
-        val width = drawable.intrinsicWidth
-        val height = drawable.intrinsicHeight
-        val bmp = createBitmap(width, height)
-        val canvas = Canvas(bmp)
-        drawable.setBounds(0, 0, width, height)
-        drawable.draw(canvas)
-        bmp
-    }
-    Card (
+    val bitmap =
+        remember(componentInfo.icon) {
+            val drawable = componentInfo.icon
+            val width = drawable.intrinsicWidth
+            val height = drawable.intrinsicHeight
+            val bmp = createBitmap(width, height)
+            val canvas = Canvas(bmp)
+            drawable.setBounds(0, 0, width, height)
+            drawable.draw(canvas)
+            bmp
+        }
+    Card(
         modifier = modifier.fillMaxWidth().padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Transparent
-        )
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Image(
                 painter = BitmapPainter(bitmap.asImageBitmap()),
                 contentDescription = null,
@@ -66,33 +63,34 @@ fun SystemRouterPreviewCard(
                 Icon(Icons.Default.ContentCopy, contentDescription = "复制内容")
             }
         }
-        Spacer(modifier= Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .animateContentSize(), // 关键动画
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
+            modifier = Modifier.fillMaxWidth().animateContentSize(), // 关键动画
+            colors =
+                CardDefaults.cardColors(
+                    containerColor =
+                        MaterialTheme.colorScheme.secondaryContainer
+                )
         ) {
-            Row(
-                modifier = modifier.fillMaxWidth().padding(16.dp)
-            ) {
+            Row(modifier = modifier.fillMaxWidth().padding(16.dp)) {
                 Text(scheme)
             }
-
         }
 
-        Spacer(modifier= Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         Row(
             modifier = modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            Button(onClick = {
-                context.startActivity(Intent(Intent.ACTION_VIEW, scheme.toUri()))
-            }) {
+            Button(
+                onClick = {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, scheme.toUri())
+                    )
+                }
+            ) {
                 Text("跳转")
             }
         }

@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.net.toUri
-import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.WaitDialog
 import com.tencent.mmkv.MMKV
@@ -42,12 +41,8 @@ object UrlHandler {
                 gzip()
                 deflate()
             }
-            install(HttpCookies) {
-                storage = AcceptAllCookiesStorage()
-            }
-            headers {
-                append("User-Agent", getSystemUserAgent())
-            }
+            install(HttpCookies) { storage = AcceptAllCookiesStorage() }
+            headers { append("User-Agent", getSystemUserAgent()) }
             followRedirects = true
         }
     }
@@ -105,7 +100,7 @@ object UrlHandler {
         return try {
             ensureTrustLinkLoad()
             trustedHost.contains(URL(url).host)
-        } catch (e: Exception)  {
+        } catch (e: Exception) {
             false
         }
         return false
@@ -141,16 +136,16 @@ object UrlHandler {
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                PopNotification.show(R.string.extract_fail)
+                PopTip.show(R.string.extract_fail).iconError()
             } finally {
                 WaitDialog.dismiss()
             }
         } else if (link.startsWith("magnet:")) {
             // TODO add bt download
         } else if (link.isEmpty()) {
-            PopTip.show(R.string.url_empty)
+            PopTip.show(R.string.url_empty).iconWarning()
         } else {
-            PopTip.show(R.string.url_format_error)
+            PopTip.show(R.string.url_format_error).iconError()
         }
     }
 }
