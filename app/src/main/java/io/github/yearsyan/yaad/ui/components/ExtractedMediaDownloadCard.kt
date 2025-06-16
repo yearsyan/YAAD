@@ -104,13 +104,6 @@ fun ExtractedMediaDownloadCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 显示媒体文件数量信息
-            Text(
-                text = "媒体文件: ${record.mediaUrls.size} 个",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
             if (currentStatus != ExtractedMediaStatus.COMPLETED) {
                 Spacer(modifier = Modifier.height(8.dp))
                 ExtractDownloadProgressBar(
@@ -165,16 +158,9 @@ fun ExtractedMediaDownloadCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-
-                if (currentStatus == ExtractedMediaStatus.COMPLETED) {
-                    Text(
-                        text = "已完成 $completedCount 个",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.weight(1.0f))
 
             ExtractedMediaActionButtons(
                 state = currentStatus,

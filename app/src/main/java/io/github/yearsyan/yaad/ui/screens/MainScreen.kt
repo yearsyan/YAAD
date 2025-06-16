@@ -3,26 +3,18 @@ package io.github.yearsyan.yaad.ui.screens
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleCoroutineScope
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadViewModel
@@ -42,15 +34,51 @@ val bottomNavItems =
     )
 
 @Composable
-fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
+fun MainContent(modifier: Modifier = Modifier, selectedIndex: Int, downloadViewModel: DownloadViewModel, lifecycleScope: LifecycleCoroutineScope) {
+    Box(modifier = modifier.fillMaxSize()) {
+        // InputScreen - index 0
+        AnimatedVisibility(
+            visible = selectedIndex == 0,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            InputScreen(lifecycleScope)
+        }
 
+        // TasksScreen - index 1
+        AnimatedVisibility(
+            visible = selectedIndex == 1,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            TasksScreen(lifecycleScope, downloadViewModel)
+        }
+
+        // SettingsScreen - index 2
+        AnimatedVisibility(
+            visible = selectedIndex == 2,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            SettingsScreen()
+        }
+    }
+}
+
+@Composable
+fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
     var selectedIndex by remember { mutableIntStateOf(0) }
     val downloadViewModel = remember { DownloadViewModel() }
+    val windowInfo = LocalWindowInfo.current
+    val isTablet = windowInfo.containerSize.width >= 600.dp.value
+    val isLandscape = windowInfo.containerSize.width > windowInfo.containerSize.height
+    val useLrNav = isTablet && isLandscape
 
     YAADTheme {
+
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            bottomBar = {
+            bottomBar = if (useLrNav)  {{}} else {{
                 NavigationBar {
                     bottomNavItems.forEachIndexed { index, item ->
                         NavigationBarItem(
@@ -59,45 +87,44 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
                             icon = {
                                 Icon(
                                     item.icon,
-                                    contentDescription =
-                                        stringResource(item.label)
+                                    contentDescription = stringResource(item.label)
                                 )
                             },
                             label = { Text(stringResource(item.label)) }
                         )
                     }
                 }
-            }
+            }}
         ) { innerPadding ->
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                // 使用 AnimatedVisibility - 优雅的动画切换，保持状态
-
-                // InputScreen - index 0
-                AnimatedVisibility(
-                    visible = selectedIndex == 0,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    InputScreen(lifecycleScope)
+            Row(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                if (useLrNav) {
+                    NavigationRail(
+                        modifier = Modifier.fillMaxHeight(),
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        bottomNavItems.forEachIndexed { index, item ->
+                            NavigationRailItem(
+                                modifier = Modifier.padding(top = 12.dp, bottom = 12.dp),
+                                selected = selectedIndex == index,
+                                onClick = { selectedIndex = index },
+                                icon = {
+                                    Icon(
+                                        item.icon,
+                                        contentDescription = stringResource(item.label)
+                                    )
+                                },
+                                label = { Text(stringResource(item.label)) }
+                            )
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
-
-                // TasksScreen - index 1
-                AnimatedVisibility(
-                    visible = selectedIndex == 1,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    TasksScreen(lifecycleScope, downloadViewModel)
-                }
-
-                // SettingsScreen - index 2
-                AnimatedVisibility(
-                    visible = selectedIndex == 2,
-                    enter = fadeIn(),
-                    exit = fadeOut()
-                ) {
-                    SettingsScreen()
-                }
+                MainContent(
+                    selectedIndex = selectedIndex,
+                    downloadViewModel = downloadViewModel,
+                    lifecycleScope = lifecycleScope
+                )
             }
         }
     }

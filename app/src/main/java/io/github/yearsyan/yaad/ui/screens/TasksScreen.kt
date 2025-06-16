@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -43,7 +44,7 @@ fun TasksScreen(scope: CoroutineScope, viewModel: DownloadViewModel) {
         EmptyState()
     } else {
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 300.dp),
+            columns = GridCells.Adaptive(minSize = 350.dp),
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -89,44 +90,49 @@ fun DownloadItem(
 ) {
     val context = LocalContext.current
 
-    if (
-        record is DownloadManager.SingleHttpDownloadSessionRecord &&
-            record.httpDownloadSession != null
+    Box(
+        modifier = Modifier.height(220.dp)
     ) {
-        val session = record.httpDownloadSession!!
-        DownloadCard(
-            scope = scope,
-            downloadSession = session,
-            fileName = session.fileName
-        )
-    } else if (record is DownloadManager.ExtractedMediaDownloadSessionRecord) {
-        ExtractedMediaDownloadCard(
-            scope = scope,
-            record = record,
-            onRemove = { recordToRemove ->
-                scope.launch {
-                    DownloadManager.deleteDownloadTask(recordToRemove.sessionId)
-                }
-            },
-            onOpenFile = { filePath ->
-                val file = File(filePath)
-                val uri =
-                    FileProvider.getUriForFile(
-                        context,
-                        "${context.packageName}.fileProvider", // 注意要与 AndroidManifest 中一致
-                        file
-                    )
-
-                val intent =
-                    Intent(Intent.ACTION_VIEW).apply {
-                        setDataAndType(uri, "video/*")
-                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        if (
+            record is DownloadManager.SingleHttpDownloadSessionRecord &&
+            record.httpDownloadSession != null
+        ) {
+            val session = record.httpDownloadSession!!
+            DownloadCard(
+                scope = scope,
+                downloadSession = session,
+                fileName = session.fileName,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (record is DownloadManager.ExtractedMediaDownloadSessionRecord) {
+            ExtractedMediaDownloadCard(
+                scope = scope,
+                record = record,
+                modifier = Modifier.fillMaxSize(),
+                onRemove = { recordToRemove ->
+                    scope.launch {
+                        DownloadManager.deleteDownloadTask(recordToRemove.sessionId)
                     }
+                },
+                onOpenFile = { filePath ->
+                    val file = File(filePath)
+                    val uri =
+                        FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.fileProvider",
+                            file
+                        )
 
-                // 启动选择器
-                val chooser = Intent.createChooser(intent, "选择播放器")
-                context.startActivity(chooser)
-            }
-        )
+                    val intent =
+                        Intent(Intent.ACTION_VIEW).apply {
+                            setDataAndType(uri, "video/*")
+                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        }
+
+                    val chooser = Intent.createChooser(intent, "选择播放器")
+                    context.startActivity(chooser)
+                }
+            )
+        }
     }
 }
