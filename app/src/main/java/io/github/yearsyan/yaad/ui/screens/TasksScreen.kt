@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -90,12 +89,10 @@ fun DownloadItem(
 ) {
     val context = LocalContext.current
 
-    Box(
-        modifier = Modifier.height(220.dp)
-    ) {
+    Box(modifier = Modifier.height(220.dp)) {
         if (
             record is DownloadManager.SingleHttpDownloadSessionRecord &&
-            record.httpDownloadSession != null
+                record.httpDownloadSession != null
         ) {
             val session = record.httpDownloadSession!!
             DownloadCard(
@@ -104,14 +101,18 @@ fun DownloadItem(
                 fileName = session.fileName,
                 modifier = Modifier.fillMaxSize()
             )
-        } else if (record is DownloadManager.ExtractedMediaDownloadSessionRecord) {
+        } else if (
+            record is DownloadManager.ExtractedMediaDownloadSessionRecord
+        ) {
             ExtractedMediaDownloadCard(
                 scope = scope,
                 record = record,
                 modifier = Modifier.fillMaxSize(),
                 onRemove = { recordToRemove ->
                     scope.launch {
-                        DownloadManager.deleteDownloadTask(recordToRemove.sessionId)
+                        DownloadManager.deleteDownloadTask(
+                            recordToRemove.sessionId
+                        )
                     }
                 },
                 onOpenFile = { filePath ->

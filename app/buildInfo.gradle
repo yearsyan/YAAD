@@ -27,15 +27,14 @@ def getUname = {
     }
 }
 
-def generateBuildInfo = tasks.register("generateBuildInfo") {
-    // 使用新的layout API替代buildDir
+tasks.register("generateBuildInfo") {
     def outputDir = layout.buildDirectory.dir("generated/source/buildInfo").get().asFile
 
     outputs.dir(outputDir)
 
     doLast {
         def className = "BuildInfo"
-        def packageName = "io.github.yearsyan.yaad" // 替换为您的包名
+        def packageName = "io.github.yearsyan.yaad"
         def javaFile = new File(outputDir, "${packageName.replace('.', '/')}/${className}.java")
         def configFile = rootProject.file("LICENSE").text
 

@@ -34,7 +34,12 @@ val bottomNavItems =
     )
 
 @Composable
-fun MainContent(modifier: Modifier = Modifier, selectedIndex: Int, downloadViewModel: DownloadViewModel, lifecycleScope: LifecycleCoroutineScope) {
+fun MainContent(
+    modifier: Modifier = Modifier,
+    selectedIndex: Int,
+    downloadViewModel: DownloadViewModel,
+    lifecycleScope: LifecycleCoroutineScope
+) {
     Box(modifier = modifier.fillMaxSize()) {
         // InputScreen - index 0
         AnimatedVisibility(
@@ -71,30 +76,36 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
     val downloadViewModel = remember { DownloadViewModel() }
     val windowInfo = LocalWindowInfo.current
     val isTablet = windowInfo.containerSize.width >= 600.dp.value
-    val isLandscape = windowInfo.containerSize.width > windowInfo.containerSize.height
+    val isLandscape =
+        windowInfo.containerSize.width > windowInfo.containerSize.height
     val useLrNav = isTablet && isLandscape
 
     YAADTheme {
-
         Scaffold(
             modifier = Modifier.fillMaxSize(),
-            bottomBar = if (useLrNav)  {{}} else {{
-                NavigationBar {
-                    bottomNavItems.forEachIndexed { index, item ->
-                        NavigationBarItem(
-                            selected = selectedIndex == index,
-                            onClick = { selectedIndex = index },
-                            icon = {
-                                Icon(
-                                    item.icon,
-                                    contentDescription = stringResource(item.label)
+            bottomBar =
+                if (useLrNav) {
+                    {}
+                } else {
+                    {
+                        NavigationBar {
+                            bottomNavItems.forEachIndexed { index, item ->
+                                NavigationBarItem(
+                                    selected = selectedIndex == index,
+                                    onClick = { selectedIndex = index },
+                                    icon = {
+                                        Icon(
+                                            item.icon,
+                                            contentDescription =
+                                                stringResource(item.label)
+                                        )
+                                    },
+                                    label = { Text(stringResource(item.label)) }
                                 )
-                            },
-                            label = { Text(stringResource(item.label)) }
-                        )
+                            }
+                        }
                     }
                 }
-            }}
         ) { innerPadding ->
             Row(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 if (useLrNav) {
@@ -105,13 +116,18 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
                         Spacer(modifier = Modifier.weight(1f))
                         bottomNavItems.forEachIndexed { index, item ->
                             NavigationRailItem(
-                                modifier = Modifier.padding(top = 12.dp, bottom = 12.dp),
+                                modifier =
+                                    Modifier.padding(
+                                        top = 12.dp,
+                                        bottom = 12.dp
+                                    ),
                                 selected = selectedIndex == index,
                                 onClick = { selectedIndex = index },
                                 icon = {
                                     Icon(
                                         item.icon,
-                                        contentDescription = stringResource(item.label)
+                                        contentDescription =
+                                            stringResource(item.label)
                                     )
                                 },
                                 label = { Text(stringResource(item.label)) }

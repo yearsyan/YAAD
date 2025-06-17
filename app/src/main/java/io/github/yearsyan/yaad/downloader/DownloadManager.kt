@@ -499,9 +499,14 @@ object DownloadManager : IDownloadListener {
 
     private fun updateFlow() {
         synchronized(downloadTasks) {
-            _tasksFlow.value = downloadTasks.toList().filter {
-                it is SingleHttpDownloadSessionRecord || it is ExtractedMediaDownloadSessionRecord
-            }.reversed()
+            _tasksFlow.value =
+                downloadTasks
+                    .toList()
+                    .filter {
+                        it is SingleHttpDownloadSessionRecord ||
+                            it is ExtractedMediaDownloadSessionRecord
+                    }
+                    .reversed()
         }
     }
 
