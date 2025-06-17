@@ -26,6 +26,8 @@
     <string name="button_open">打开</string>
     <string name="button_clear">清除</string>
     <string name="button_retry">重试</string>
+    <string name="popup_item_delete">删除</string>
+    <string name="popup_item_open_folder">打开文件夹</string>
 
     <string name="bytes_zero">0 B</string>
     <string name="speed_zero">0 B/s</string>
@@ -78,6 +80,8 @@
     <string name="move_to_download_failed">移动到下载目录失败</string>
     <string name="merge_failed">合并失败</string>
     <string name="download">下载</string>
+    <string name="navigate_to">跳转</string>
+    <string name="copy_content">复制内容</string>
 
     <string name="no_download_tasks">暂无下载任务</string>
     <string name="close_dialog">关闭</string>
@@ -87,4 +91,86 @@
     <string name="webview_menu_open_in_browser">在浏览器中打开</string>
     <string name="webview_menu_refresh">刷新</string>
     <string name="webview_menu_copy_link">复制链接</string>
+
+    <string name="about">关于</string>
+    <string name="back">返回</string>
+    <string name="app_info">应用信息</string>
+    <string name="version_info">版本信息</string>
+    <string name="build_date">构建日期</string>
+    <string name="open_source_info">开源信息</string>
+    <string name="open_source_license">开源许可</string>
+    <string name="view_open_source_license">查看开源许可证</string>
+    <string name="source_code">源代码</string>
+    <string name="github_repo">GitHub仓库</string>
+    <string name="check_update">检查更新</string>
+    <string name="check_update_desc">检查是否有新版本可用</string>
+
+    <string name="ffmpeg_settings">FFmpeg设置</string>
+    <string name="ffmpeg_install_method">安装方式</string>
+    <string name="ffmpeg_source">FFmpeg获取方式</string>
+    <string name="ffmpeg_source_desc">选择FFmpeg的安装来源</string>
+    <string name="ffmpeg_builtin">内置版本</string>
+    <string name="ffmpeg_custom_settings">自定义设置</string>
+    <string name="ffmpeg_download_url">下载链接</string>
+    <string name="ffmpeg_download_url_desc">输入FFmpeg的下载URL</string>
+    <string name="ffmpeg_download_url_placeholder">https://example.com/ffmpeg.zip</string>
+    <string name="ffmpeg_instructions">说明</string>
+    <string name="ffmpeg_install_instructions_title">安装方式说明</string>
+    <string name="ffmpeg_install_instructions">• 内置版本：使用应用内置的FFmpeg库\n• 自动下载：从官方源自动下载最新版本\n• 自定义URL：从指定链接下载FFmpeg</string>
+
+    <!-- Download Settings -->
+    <string name="download_settings">下载设置</string>
+    <string name="thread_settings">线程设置</string>
+    <string name="default_download_threads">默认下载线程数</string>
+    <string name="current_threads">当前: %1$d 线程</string>
+    <string name="speed_limit">速度限制</string>
+    <string name="bt_download_speed_limit">BT下载限速</string>
+    <string name="bt_upload_speed_limit">BT上传限速</string>
+    <string name="no_limit">无限制</string>
+    <string name="speed_limit_format">%1$d KB/s</string>
+    <string name="other_settings">其他设置</string>
+    <string name="auto_retry_count">自动重试次数</string>
+    <string name="auto_retry_count_desc">下载失败时的自动重试次数</string>
+    <string name="retry_count_format">%1$d 次</string>
+    <string name="instructions">说明</string>
+    <string name="download_settings_instructions">下载设置说明</string>
+    <string name="download_settings_instructions_content">• 线程数：建议设置为1-16，过多线程可能影响性能\n• 限速设置：0表示无限制，单位为KB/s\n• 重试次数：网络不稳定时建议设置3-5次</string>
+
+    <!-- Notification Settings -->
+    <string name="notification_settings">通知设置</string>
+    <string name="notification_switch">通知开关</string>
+    <string name="enable_notification">启用通知</string>
+    <string name="notification_permission_required">需要通知权限才能显示通知</string>
+    <string name="notification_enabled_desc">下载完成时显示通知</string>
+    <string name="notification_permission_error">无法申请权限，请手动在系统设置中开启</string>
+    <string name="notification_permission_missing">缺少通知权限</string>
+    <string name="notification_permission_missing_desc">应用需要通知权限才能在下载完成时显示通知。请在系统设置中手动开启通知权限。</string>
+    <string name="notification_instructions">说明</string>
+    <string name="notification_instructions_title">通知设置说明</string>
+    <string name="notification_instructions_content">• 开启后，下载完成时会显示系统通知\n• 通知包含下载文件名和状态信息\n• 可以通过通知快速访问下载的文件\n• Android 13+ 需要手动授予通知权限\n• 如果系统禁用了应用通知权限，此设置无效</string>
+
+    <!-- Cookie Settings -->
+    <string name="cookie_settings">Cookie设置</string>
+    <string name="current_cookie_file">当前Cookie文件</string>
+    <string name="no_cookie_file">未设置Cookie文件</string>
+    <string name="cookie_file_description">Cookie文件说明</string>
+    <string name="cookie_file_description_content">• Cookie文件用于访问需要登录的网站\n• 支持从浏览器导出的cookies.txt格式\n• 文件会被复制到应用内部存储中\n• 可以选择不使用Cookie文件</string>
+    <string name="how_to_get_cookie">如何获取Cookie文件</string>
+    <string name="how_to_get_cookie_content">1. 使用浏览器扩展（如Get cookies.txt）\n2. 从浏览器开发者工具导出\n3. 使用专门的Cookie导出工具\n4. 确保文件格式为Netscape格式</string>
+
+    <string name="settings">设置</string>
+    <string name="media_processing">媒体处理</string>
+    <string name="download_config">下载配置</string>
+    <string name="app_settings">应用设置</string>
+    <string name="other">其他</string>
+    <string name="ffmpeg_builtin_version">内置版本</string>
+    <string name="ffmpeg_auto_download">自动下载</string>
+    <string name="ffmpeg_custom_url">自定义URL</string>
+    <string name="cookie_file_set">已设置: %1$s</string>
+    <string name="download_threads_format">线程数: %1$d</string>
+    <string name="download_speed_limit_format">下载限速: %1$s</string>
+    <string name="notification_enabled">已开启</string>
+    <string name="notification_disabled">已关闭</string>
+    <string name="about_subtitle">版本信息和开源许可</string>
+    <string name="settings_select_item">从左侧选择要配置的设置项</string>
 </resources>

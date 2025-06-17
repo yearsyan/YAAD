@@ -9,7 +9,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.R
 
 @Composable
 fun AdaptiveSettingsScreen() {
@@ -169,10 +171,13 @@ private fun DefaultDetailPane() {
             horizontalAlignment =
                 androidx.compose.ui.Alignment.CenterHorizontally
         ) {
-            Text(text = "设置", style = MaterialTheme.typography.headlineLarge)
+            Text(
+                text = stringResource(R.string.settings),
+                style = MaterialTheme.typography.headlineLarge
+            )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "从左侧选择要配置的设置项",
+                text = stringResource(R.string.settings_select_item),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

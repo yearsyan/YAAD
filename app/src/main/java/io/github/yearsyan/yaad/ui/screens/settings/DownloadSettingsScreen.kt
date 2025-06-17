@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.ui.components.*
 import io.github.yearsyan.yaad.utils.SettingsManager
 
@@ -27,12 +29,17 @@ fun DownloadSettingsScreen(onNavigateBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         // 顶部应用栏
         TopAppBar(
-            title = { Text(text = "下载设置", fontWeight = FontWeight.Bold) },
+            title = {
+                Text(
+                    text = stringResource(R.string.download_settings),
+                    fontWeight = FontWeight.Bold
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回"
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             }
@@ -43,12 +50,18 @@ fun DownloadSettingsScreen(onNavigateBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            item { SettingsGroupTitle("线程设置") }
+            item {
+                SettingsGroupTitle(stringResource(R.string.thread_settings))
+            }
 
             item {
                 SettingsItem(
-                    title = "默认下载线程数",
-                    subtitle = "当前: ${settings.defaultDownloadThreads} 线程",
+                    title = stringResource(R.string.default_download_threads),
+                    subtitle =
+                        stringResource(
+                            R.string.current_threads,
+                            settings.defaultDownloadThreads
+                        ),
                     icon = Icons.Default.Speed,
                     trailing = {
                         Row {
@@ -69,23 +82,31 @@ fun DownloadSettingsScreen(onNavigateBack: () -> Unit) {
                 )
             }
 
-            item { SettingsGroupTitle("速度限制") }
+            item { SettingsGroupTitle(stringResource(R.string.speed_limit)) }
 
             item {
                 SettingsItem(
-                    title = "BT下载限速",
+                    title = stringResource(R.string.bt_download_speed_limit),
                     subtitle =
-                        if (settings.btDownloadSpeedLimit == 0L) "无限制"
-                        else "${settings.btDownloadSpeedLimit} KB/s",
+                        if (settings.btDownloadSpeedLimit == 0L)
+                            stringResource(R.string.no_limit)
+                        else
+                            stringResource(
+                                R.string.speed_limit_format,
+                                settings.btDownloadSpeedLimit
+                            ),
                     icon = Icons.Default.Download,
                     trailing = {
                         Row {
                             Text(
                                 text =
                                     if (settings.btDownloadSpeedLimit == 0L)
-                                        "无限制"
+                                        stringResource(R.string.no_limit)
                                     else
-                                        "${settings.btDownloadSpeedLimit} KB/s",
+                                        stringResource(
+                                            R.string.speed_limit_format,
+                                            settings.btDownloadSpeedLimit
+                                        ),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Medium
@@ -103,17 +124,27 @@ fun DownloadSettingsScreen(onNavigateBack: () -> Unit) {
 
             item {
                 SettingsItem(
-                    title = "BT上传限速",
+                    title = stringResource(R.string.bt_upload_speed_limit),
                     subtitle =
-                        if (settings.btUploadSpeedLimit == 0L) "无限制"
-                        else "${settings.btUploadSpeedLimit} KB/s",
+                        if (settings.btUploadSpeedLimit == 0L)
+                            stringResource(R.string.no_limit)
+                        else
+                            stringResource(
+                                R.string.speed_limit_format,
+                                settings.btUploadSpeedLimit
+                            ),
                     icon = Icons.Default.Upload,
                     trailing = {
                         Row {
                             Text(
                                 text =
-                                    if (settings.btUploadSpeedLimit == 0L) "无限制"
-                                    else "${settings.btUploadSpeedLimit} KB/s",
+                                    if (settings.btUploadSpeedLimit == 0L)
+                                        stringResource(R.string.no_limit)
+                                    else
+                                        stringResource(
+                                            R.string.speed_limit_format,
+                                            settings.btUploadSpeedLimit
+                                        ),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.primary,
                                 fontWeight = FontWeight.Medium
@@ -129,12 +160,12 @@ fun DownloadSettingsScreen(onNavigateBack: () -> Unit) {
                 )
             }
 
-            item { SettingsGroupTitle("其他设置") }
+            item { SettingsGroupTitle(stringResource(R.string.other_settings)) }
 
             item {
                 SliderSettingsItem(
-                    title = "自动重试次数",
-                    subtitle = "下载失败时的自动重试次数",
+                    title = stringResource(R.string.auto_retry_count),
+                    subtitle = stringResource(R.string.auto_retry_count_desc),
                     icon = Icons.Default.Refresh,
                     value = settings.autoRetryCount.toFloat(),
                     valueRange = 0f..10f,
@@ -144,11 +175,16 @@ fun DownloadSettingsScreen(onNavigateBack: () -> Unit) {
                             settings.copy(autoRetryCount = value.toInt())
                         settingsManager.saveSettings(newSettings)
                     },
-                    valueFormatter = { "${it.toInt()} 次" }
+                    valueFormatter = {
+                        context.getString(
+                            R.string.retry_count_format,
+                            it.toInt()
+                        )
+                    }
                 )
             }
 
-            item { SettingsGroupTitle("说明") }
+            item { SettingsGroupTitle(stringResource(R.string.instructions)) }
 
             item {
                 Card(
@@ -159,16 +195,20 @@ fun DownloadSettingsScreen(onNavigateBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Text(
-                            text = "下载设置说明",
+                            text =
+                                stringResource(
+                                    R.string.download_settings_instructions
+                                ),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text =
-                                "• 线程数：建议设置为1-16，过多线程可能影响性能\n" +
-                                    "• 限速设置：0表示无限制，单位为KB/s\n" +
-                                    "• 重试次数：网络不稳定时建议设置3-5次",
+                                stringResource(
+                                    R.string
+                                        .download_settings_instructions_content
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

@@ -10,6 +10,7 @@ import io.github.yaad.downloader_core.IDownloadSession
 import io.github.yaad.downloader_core.getAppContext
 import io.github.yearsyan.yaad.db.DownloadDatabaseHelper
 import io.github.yearsyan.yaad.media.FFmpegTools
+import io.github.yearsyan.yaad.utils.SettingsManager
 import io.github.yearsyan.yaad.utils.sha512
 import java.io.File
 import java.lang.ref.WeakReference
@@ -42,7 +43,8 @@ object DownloadManager : IDownloadListener {
         val originLink: String,
         val recoverFile: String,
         val savePath: String = "",
-        val downloadState: DownloadState
+        val downloadState: DownloadState,
+        val createAt: Long = System.currentTimeMillis(),
     ) {
         open fun isActiveForService(): Boolean = false
     }
@@ -53,7 +55,8 @@ object DownloadManager : IDownloadListener {
         originLink: String,
         recoverFile: String,
         savePath: String = "",
-        downloadState: DownloadState = DownloadState.PENDING
+        downloadState: DownloadState = DownloadState.PENDING,
+        createAt: Long = System.currentTimeMillis(),
     ) :
         DownloadSessionRecord(
             title,
@@ -62,7 +65,8 @@ object DownloadManager : IDownloadListener {
             originLink,
             recoverFile,
             savePath,
-            downloadState
+            downloadState,
+            createAt
         ) {
         var httpDownloadSession: HttpDownloadSession? = null
 
@@ -82,7 +86,8 @@ object DownloadManager : IDownloadListener {
         recoverFile: String,
         savePath: String = "",
         val parentSessionId: String,
-        downloadState: DownloadState = DownloadState.PENDING
+        downloadState: DownloadState = DownloadState.PENDING,
+        createAt: Long = System.currentTimeMillis(),
     ) :
         DownloadSessionRecord(
             title,
@@ -91,7 +96,8 @@ object DownloadManager : IDownloadListener {
             originLink,
             recoverFile,
             savePath,
-            downloadState
+            downloadState,
+            createAt
         ) {
         var httpDownloadSession: HttpDownloadSession? = null
 
@@ -111,7 +117,8 @@ object DownloadManager : IDownloadListener {
         recoverFile: String,
         val mediaUrls: List<String>,
         savePath: String = "",
-        downloadState: DownloadState = DownloadState.PENDING
+        downloadState: DownloadState = DownloadState.PENDING,
+        createAt: Long = System.currentTimeMillis()
     ) :
         DownloadSessionRecord(
             title,
@@ -120,7 +127,8 @@ object DownloadManager : IDownloadListener {
             originLink,
             recoverFile,
             savePath,
-            downloadState
+            downloadState,
+            createAt
         ) {
         val childSessions = mutableListOf<ChildHttpDownloadSessionRecord>()
         var completedCount = 0
@@ -268,7 +276,9 @@ object DownloadManager : IDownloadListener {
             HttpDownloadSession(
                 url = url,
                 path = fileDist.absolutePath,
-                headers = headers
+                headers = headers,
+                threadCount =
+                    SettingsManager.getInstance(context).getThreadCount()
             )
 
         httpSession.addDownloadListener(this)
@@ -353,7 +363,9 @@ object DownloadManager : IDownloadListener {
                 HttpDownloadSession(
                     url = url,
                     path = fileDist.absolutePath,
-                    headers = headers
+                    headers = headers,
+                    threadCount =
+                        SettingsManager.getInstance(context).getThreadCount()
                 )
 
             httpSession.addDownloadListener(this)
@@ -536,36 +548,7 @@ object DownloadManager : IDownloadListener {
         }
     }
 
-    private fun checkAndControlService() {
-        //        downloadScope.launch {
-        //            serviceControlMutex.withLock {
-        //                val shouldServiceRun = hasActiveTasks()
-        //                if (shouldServiceRun && !isServiceRunning) {
-        //                    val serviceIntent =
-        //                        Intent(context, DownloadForegroundService::class.java)
-        //                            .apply {
-        //                                action =
-        //                                    DownloadServiceConstants
-        //                                        .ACTION_START_FOREGROUND_SERVICE
-        //                            }
-        //                    ContextCompat.startForegroundService(context, serviceIntent)
-        //                    isServiceRunning = true
-        //                } else if (!shouldServiceRun && isServiceRunning) {
-        //                    val serviceIntent =
-        //                        Intent(context, DownloadForegroundService::class.java)
-        //                            .apply {
-        //                                action =
-        //                                    DownloadServiceConstants
-        //                                        .ACTION_STOP_FOREGROUND_SERVICE
-        //                            }
-        //                    context.stopService(
-        //                        serviceIntent
-        //                    ) // stopService is fine, it will call onDestroy in service
-        //                    isServiceRunning = false
-        //                }
-        //            }
-        //        }
-    }
+    private fun checkAndControlService() {}
 
     override fun onComplete(session: IDownloadSession) {
         super.onComplete(session)

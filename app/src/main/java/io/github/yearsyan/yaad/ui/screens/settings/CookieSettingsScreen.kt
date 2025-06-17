@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.ui.components.*
 import io.github.yearsyan.yaad.utils.SettingsManager
 
@@ -26,12 +28,17 @@ fun CookieSettingsScreen(onNavigateBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         // 顶部应用栏
         TopAppBar(
-            title = { Text(text = "Cookie设置", fontWeight = FontWeight.Bold) },
+            title = {
+                Text(
+                    text = stringResource(R.string.cookie_settings),
+                    fontWeight = FontWeight.Bold
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回"
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             }
@@ -42,16 +49,18 @@ fun CookieSettingsScreen(onNavigateBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            item { SettingsGroupTitle("Cookie文件") }
+            item {
+                SettingsGroupTitle(stringResource(R.string.cookie_settings))
+            }
 
             item {
                 SettingsItem(
-                    title = "当前Cookie文件",
+                    title = stringResource(R.string.current_cookie_file),
                     subtitle =
                         if (settings.cookieFilePath.isNotEmpty()) {
                             settings.cookieFilePath.substringAfterLast("/")
                         } else {
-                            "未设置Cookie文件"
+                            stringResource(R.string.no_cookie_file)
                         },
                     icon = Icons.Default.Cookie,
                     trailing = {
@@ -64,7 +73,7 @@ fun CookieSettingsScreen(onNavigateBack: () -> Unit) {
                 )
             }
 
-            item { SettingsGroupTitle("说明") }
+            item { SettingsGroupTitle(stringResource(R.string.instructions)) }
 
             item {
                 Card(
@@ -75,17 +84,19 @@ fun CookieSettingsScreen(onNavigateBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Text(
-                            text = "Cookie文件说明",
+                            text =
+                                stringResource(
+                                    R.string.cookie_file_description
+                                ),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text =
-                                "• Cookie文件用于访问需要登录的网站\n" +
-                                    "• 支持从浏览器导出的cookies.txt格式\n" +
-                                    "• 文件会被复制到应用内部存储中\n" +
-                                    "• 可以选择不使用Cookie文件",
+                                stringResource(
+                                    R.string.cookie_file_description_content
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -93,7 +104,9 @@ fun CookieSettingsScreen(onNavigateBack: () -> Unit) {
                 }
             }
 
-            item { SettingsGroupTitle("获取Cookie文件") }
+            item {
+                SettingsGroupTitle(stringResource(R.string.how_to_get_cookie))
+            }
 
             item {
                 Card(
@@ -104,17 +117,16 @@ fun CookieSettingsScreen(onNavigateBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Text(
-                            text = "如何获取Cookie文件",
+                            text = stringResource(R.string.how_to_get_cookie),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text =
-                                "1. 使用浏览器扩展（如Get cookies.txt）\n" +
-                                    "2. 从浏览器开发者工具导出\n" +
-                                    "3. 使用专门的Cookie导出工具\n" +
-                                    "4. 确保文件格式为Netscape格式",
+                                stringResource(
+                                    R.string.how_to_get_cookie_content
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

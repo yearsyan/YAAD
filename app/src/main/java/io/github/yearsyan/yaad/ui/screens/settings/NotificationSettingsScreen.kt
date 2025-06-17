@@ -9,12 +9,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.kongzue.dialogx.dialogs.PopNotification
 import io.github.yearsyan.yaad.MainActivity
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.ui.components.*
 import io.github.yearsyan.yaad.utils.PermissionUtils
 import io.github.yearsyan.yaad.utils.SettingsManager
@@ -51,12 +53,17 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         // 顶部应用栏
         TopAppBar(
-            title = { Text(text = "通知设置", fontWeight = FontWeight.Bold) },
+            title = {
+                Text(
+                    text = stringResource(R.string.notification_settings),
+                    fontWeight = FontWeight.Bold
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回"
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             }
@@ -67,16 +74,20 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            item { SettingsGroupTitle("通知开关") }
+            item {
+                SettingsGroupTitle(stringResource(R.string.notification_switch))
+            }
 
             item {
                 SwitchSettingsItem(
-                    title = "启用通知",
+                    title = stringResource(R.string.enable_notification),
                     subtitle =
                         if (hasNotificationPermission) {
-                            "下载完成时显示通知"
+                            stringResource(R.string.notification_enabled_desc)
                         } else {
-                            "需要通知权限才能显示通知"
+                            stringResource(
+                                R.string.notification_permission_required
+                            )
                         },
                     icon = Icons.Default.Notifications,
                     checked =
@@ -94,7 +105,7 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
                                 // 没有权限，申请权限
                                 activity?.requestNotificationPermission()
                                     ?: PopNotification.show(
-                                        "无法申请权限，请手动在系统设置中开启"
+                                        R.string.notification_permission_error
                                     )
                             }
                         } else {
@@ -133,7 +144,11 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
                             )
                             Column {
                                 Text(
-                                    text = "缺少通知权限",
+                                    text =
+                                        stringResource(
+                                            R.string
+                                                .notification_permission_missing
+                                        ),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color =
@@ -143,7 +158,10 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Text(
                                     text =
-                                        "应用需要通知权限才能在下载完成时显示通知。请在系统设置中手动开启通知权限。",
+                                        stringResource(
+                                            R.string
+                                                .notification_permission_missing_desc
+                                        ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color =
                                         MaterialTheme.colorScheme
@@ -155,7 +173,11 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
                 }
             }
 
-            item { SettingsGroupTitle("说明") }
+            item {
+                SettingsGroupTitle(
+                    stringResource(R.string.notification_instructions)
+                )
+            }
 
             item {
                 Card(
@@ -166,18 +188,19 @@ fun NotificationSettingsScreen(onNavigateBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Text(
-                            text = "通知设置说明",
+                            text =
+                                stringResource(
+                                    R.string.notification_instructions_title
+                                ),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text =
-                                "• 开启后，下载完成时会显示系统通知\n" +
-                                    "• 通知包含下载文件名和状态信息\n" +
-                                    "• 可以通过通知快速访问下载的文件\n" +
-                                    "• Android 13+ 需要手动授予通知权限\n" +
-                                    "• 如果系统禁用了应用通知权限，此设置无效",
+                                stringResource(
+                                    R.string.notification_instructions_content
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

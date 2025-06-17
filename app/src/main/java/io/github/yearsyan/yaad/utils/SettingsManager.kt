@@ -212,4 +212,8 @@ class SettingsManager private constructor(context: Context) {
             saveCookieFiles(validFiles)
         }
     }
+
+    fun getThreadCount(): Int {
+        return _settings.value.defaultDownloadThreads
+    }
 }

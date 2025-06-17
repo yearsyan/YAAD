@@ -9,8 +9,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.model.FFmpegInstallType
 import io.github.yearsyan.yaad.ui.components.*
 import io.github.yearsyan.yaad.utils.SettingsManager
@@ -27,12 +29,17 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
     Column(modifier = Modifier.fillMaxSize()) {
         // 顶部应用栏
         TopAppBar(
-            title = { Text(text = "FFmpeg设置", fontWeight = FontWeight.Bold) },
+            title = {
+                Text(
+                    text = stringResource(R.string.ffmpeg_settings),
+                    fontWeight = FontWeight.Bold
+                )
+            },
             navigationIcon = {
                 IconButton(onClick = onNavigateBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回"
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             }
@@ -43,16 +50,21 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 32.dp)
         ) {
-            item { SettingsGroupTitle("安装方式") }
+            item {
+                SettingsGroupTitle(
+                    stringResource(R.string.ffmpeg_install_method)
+                )
+            }
 
             item {
                 RadioGroupSettingsItem(
-                    title = "FFmpeg获取方式",
-                    subtitle = "选择FFmpeg的安装来源",
+                    title = stringResource(R.string.ffmpeg_source),
+                    subtitle = stringResource(R.string.ffmpeg_source_desc),
                     icon = Icons.Default.VideoLibrary,
                     options =
                         listOf(
-                            FFmpegInstallType.BUILTIN to "内置版本",
+                            FFmpegInstallType.BUILTIN to
+                                stringResource(R.string.ffmpeg_builtin),
                             //                            FFmpegInstallType.DOWNLOAD to "自动下载",
                             //                            FFmpegInstallType.CUSTOM_URL to "自定义URL"
                         ),
@@ -64,12 +76,17 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
             }
 
             if (settings.ffmpegInstallType == FFmpegInstallType.CUSTOM_URL) {
-                item { SettingsGroupTitle("自定义设置") }
+                item {
+                    SettingsGroupTitle(
+                        stringResource(R.string.ffmpeg_custom_settings)
+                    )
+                }
 
                 item {
                     TextFieldSettingsItem(
-                        title = "下载链接",
-                        subtitle = "输入FFmpeg的下载URL",
+                        title = stringResource(R.string.ffmpeg_download_url),
+                        subtitle =
+                            stringResource(R.string.ffmpeg_download_url_desc),
                         icon = Icons.Default.Link,
                         value = customUrl,
                         onValueChange = {
@@ -79,12 +96,17 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
                                 it
                             )
                         },
-                        placeholder = "https://example.com/ffmpeg.zip"
+                        placeholder =
+                            stringResource(
+                                R.string.ffmpeg_download_url_placeholder
+                            )
                     )
                 }
             }
 
-            item { SettingsGroupTitle("说明") }
+            item {
+                SettingsGroupTitle(stringResource(R.string.ffmpeg_instructions))
+            }
 
             item {
                 Card(
@@ -95,16 +117,19 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                         Text(
-                            text = "安装方式说明",
+                            text =
+                                stringResource(
+                                    R.string.ffmpeg_install_instructions_title
+                                ),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text =
-                                "• 内置版本：使用应用内置的FFmpeg库\n" +
-                                    "• 自动下载：从官方源自动下载最新版本\n" +
-                                    "• 自定义URL：从指定链接下载FFmpeg",
+                                stringResource(
+                                    R.string.ffmpeg_install_instructions
+                                ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

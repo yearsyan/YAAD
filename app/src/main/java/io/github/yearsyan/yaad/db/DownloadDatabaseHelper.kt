@@ -31,6 +31,7 @@ class DownloadDatabaseHelper(context: Context) :
         private const val COLUMN_MEDIA_URLS = "media_urls"
         private const val COLUMN_PARENT_SESSION_ID = "parent_session_id"
         private const val COLUMN_DOWNLOAD_STATE = "download_state"
+        private const val COLUMN_CREATE_TIME = "create_at"
 
         private val json = Json { ignoreUnknownKeys = true }
     }
@@ -40,6 +41,7 @@ class DownloadDatabaseHelper(context: Context) :
             """
             CREATE TABLE $TABLE_DOWNLOAD_SESSIONS (
                 $COLUMN_SESSION_ID TEXT PRIMARY KEY,
+                $COLUMN_CREATE_TIME INTEGER,
                 $COLUMN_TITLE TEXT NOT NULL,
                 $COLUMN_DOWNLOAD_TYPE TEXT NOT NULL,
                 $COLUMN_ORIGIN_LINK TEXT NOT NULL,
@@ -76,6 +78,7 @@ class DownloadDatabaseHelper(context: Context) :
                 put(COLUMN_RECOVER_FILE, record.recoverFile)
                 put(COLUMN_SAVE_PATH, record.savePath)
                 put(COLUMN_TITLE, record.title)
+                put(COLUMN_CREATE_TIME, record.createAt)
 
                 // 根据不同的记录类型获取下载状态
                 val downloadState =
@@ -224,6 +227,8 @@ class DownloadDatabaseHelper(context: Context) :
                             it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)
                         )
                     )
+                val createAt =
+                    it.getLong(it.getColumnIndexOrThrow(COLUMN_CREATE_TIME))
 
                 val record =
                     when (DownloadType.valueOf(downloadType)) {
@@ -234,7 +239,8 @@ class DownloadDatabaseHelper(context: Context) :
                                 originLink = originLink,
                                 recoverFile = recoverFile,
                                 savePath = savePath,
-                                downloadState = downloadState
+                                downloadState = downloadState,
+                                createAt = createAt
                             )
                         }
                         DownloadType.EXTRACTED_MEDIA -> {
@@ -248,7 +254,8 @@ class DownloadDatabaseHelper(context: Context) :
                                         json.decodeFromString(mediaUrls)
                                     else emptyList(),
                                 savePath = savePath,
-                                downloadState
+                                downloadState,
+                                createAt = createAt
                             )
                         }
                         DownloadType.CHILD_HTTP -> {
@@ -259,7 +266,8 @@ class DownloadDatabaseHelper(context: Context) :
                                 recoverFile = recoverFile,
                                 savePath = savePath,
                                 parentSessionId = parentSessionId,
-                                downloadState
+                                downloadState,
+                                createAt = createAt
                             )
                         }
                         else -> null
@@ -268,107 +276,5 @@ class DownloadDatabaseHelper(context: Context) :
             }
         }
         return records
-    }
-
-    fun getDownloadSession(sessionId: String): DownloadSessionRecord? {
-        val db = this.readableDatabase
-        val cursor =
-            db.query(
-                TABLE_DOWNLOAD_SESSIONS,
-                null,
-                "$COLUMN_SESSION_ID = ?",
-                arrayOf(sessionId),
-                null,
-                null,
-                null
-            )
-
-        cursor.use {
-            if (it.moveToFirst()) {
-                val downloadType =
-                    DownloadType.valueOf(
-                        it.getString(
-                            it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_TYPE)
-                        )
-                    )
-                val title = it.getString(it.getColumnIndexOrThrow(COLUMN_TITLE))
-                val originLink =
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_ORIGIN_LINK))
-                val recoverFile =
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_RECOVER_FILE))
-                val savePath =
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_SAVE_PATH))
-                        ?: ""
-                val mediaUrlsJson =
-                    it.getString(it.getColumnIndexOrThrow(COLUMN_MEDIA_URLS))
-                        ?: ""
-                val parentSessionId =
-                    it.getString(
-                        it.getColumnIndexOrThrow(COLUMN_PARENT_SESSION_ID)
-                    ) ?: ""
-                val downloadState =
-                    DownloadState.valueOf(
-                        it.getString(
-                            it.getColumnIndexOrThrow(COLUMN_DOWNLOAD_STATE)
-                        )
-                    )
-
-                return when (downloadType) {
-                    DownloadType.SINGLE_HTTP ->
-                        SingleHttpDownloadSessionRecord(
-                            sessionId,
-                            originLink,
-                            recoverFile,
-                            savePath,
-                            "",
-                            downloadState
-                        )
-                    DownloadType.EXTRACTED_MEDIA -> {
-                        val mediaUrls =
-                            try {
-                                if (mediaUrlsJson.isNotEmpty()) {
-                                    json.decodeFromString<List<String>>(
-                                        mediaUrlsJson
-                                    )
-                                } else {
-                                    emptyList()
-                                }
-                            } catch (e: Exception) {
-                                emptyList<String>()
-                            }
-                        ExtractedMediaDownloadSessionRecord(
-                            title,
-                            sessionId,
-                            originLink,
-                            recoverFile,
-                            mediaUrls,
-                            savePath,
-                            downloadState
-                        )
-                    }
-                    DownloadType.CHILD_HTTP ->
-                        ChildHttpDownloadSessionRecord(
-                            title,
-                            sessionId,
-                            originLink,
-                            recoverFile,
-                            savePath,
-                            parentSessionId,
-                            downloadState
-                        )
-                    else ->
-                        DownloadSessionRecord(
-                            title,
-                            sessionId,
-                            downloadType,
-                            originLink,
-                            recoverFile,
-                            savePath,
-                            downloadState
-                        )
-                }
-            }
-        }
-        return null
     }
 }

@@ -17,9 +17,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.net.toUri
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.utils.ClipboardUtils
 import io.github.yearsyan.yaad.utils.ComponentInfo
 
@@ -60,7 +62,10 @@ fun SystemRouterPreviewCard(
             IconButton(
                 onClick = { ClipboardUtils.writeText(context, scheme) }
             ) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "复制内容")
+                Icon(
+                    Icons.Default.ContentCopy,
+                    contentDescription = stringResource(R.string.copy_content)
+                )
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -91,7 +96,7 @@ fun SystemRouterPreviewCard(
                     )
                 }
             ) {
-                Text("跳转")
+                Text(stringResource(R.string.navigate_to))
             }
         }
     }

@@ -9,8 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.ui.components.SettingsGroupTitle
 import io.github.yearsyan.yaad.ui.components.SettingsItem
 import io.github.yearsyan.yaad.utils.SettingsManager
@@ -42,26 +44,29 @@ fun SettingsMainScreen(onNavigateToSubSetting: (SettingsRoute) -> Unit) {
                 )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "设置",
+                    text = stringResource(R.string.settings),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
         }
 
-        item { SettingsGroupTitle("媒体处理") }
+        item { SettingsGroupTitle(stringResource(R.string.media_processing)) }
 
         item {
             SettingsItem(
-                title = "FFmpeg设置",
+                title = stringResource(R.string.ffmpeg_settings),
                 subtitle =
                     when (settings.ffmpegInstallType) {
                         io.github.yearsyan.yaad.model.FFmpegInstallType
-                            .BUILTIN -> "内置版本"
+                            .BUILTIN ->
+                            stringResource(R.string.ffmpeg_builtin_version)
                         io.github.yearsyan.yaad.model.FFmpegInstallType
-                            .DOWNLOAD -> "自动下载"
+                            .DOWNLOAD ->
+                            stringResource(R.string.ffmpeg_auto_download)
                         io.github.yearsyan.yaad.model.FFmpegInstallType
-                            .CUSTOM_URL -> "自定义URL"
+                            .CUSTOM_URL ->
+                            stringResource(R.string.ffmpeg_custom_url)
                     },
                 icon = Icons.Default.VideoLibrary,
                 trailing = {
@@ -73,12 +78,15 @@ fun SettingsMainScreen(onNavigateToSubSetting: (SettingsRoute) -> Unit) {
 
         item {
             SettingsItem(
-                title = "Cookie设置",
+                title = stringResource(R.string.cookie_settings),
                 subtitle =
                     if (settings.cookieFilePath.isNotEmpty()) {
-                        "已设置: ${settings.cookieFilePath.substringAfterLast("/")}"
+                        stringResource(
+                            R.string.cookie_file_set,
+                            settings.cookieFilePath.substringAfterLast("/")
+                        )
                     } else {
-                        "未设置Cookie文件"
+                        stringResource(R.string.no_cookie_file)
                     },
                 icon = Icons.Default.Cookie,
                 trailing = {
@@ -88,18 +96,27 @@ fun SettingsMainScreen(onNavigateToSubSetting: (SettingsRoute) -> Unit) {
             )
         }
 
-        item { SettingsGroupTitle("下载配置") }
+        item { SettingsGroupTitle(stringResource(R.string.download_config)) }
 
         item {
             SettingsItem(
-                title = "下载设置",
+                title = stringResource(R.string.download_settings),
                 subtitle =
                     buildString {
-                        append("线程数: ${settings.defaultDownloadThreads}")
-                        append(" | 下载限速: ")
                         append(
-                            if (settings.btDownloadSpeedLimit == 0L) "无限制"
-                            else "${settings.btDownloadSpeedLimit} KB/s"
+                            stringResource(
+                                R.string.download_threads_format,
+                                settings.defaultDownloadThreads
+                            )
+                        )
+                        append(" | ")
+                        append(
+                            stringResource(
+                                R.string.download_speed_limit_format,
+                                if (settings.btDownloadSpeedLimit == 0L)
+                                    stringResource(R.string.no_limit)
+                                else "${settings.btDownloadSpeedLimit} KB/s"
+                            )
                         )
                     },
                 icon = Icons.Default.CloudDownload,
@@ -110,12 +127,15 @@ fun SettingsMainScreen(onNavigateToSubSetting: (SettingsRoute) -> Unit) {
             )
         }
 
-        item { SettingsGroupTitle("应用设置") }
+        item { SettingsGroupTitle(stringResource(R.string.app_settings)) }
 
         item {
             SettingsItem(
-                title = "通知设置",
-                subtitle = if (settings.enableNotifications) "已开启" else "已关闭",
+                title = stringResource(R.string.notification_settings),
+                subtitle =
+                    if (settings.enableNotifications)
+                        stringResource(R.string.notification_enabled)
+                    else stringResource(R.string.notification_disabled),
                 icon = Icons.Default.Notifications,
                 trailing = {
                     Icon(Icons.Default.ChevronRight, contentDescription = null)
@@ -124,12 +144,12 @@ fun SettingsMainScreen(onNavigateToSubSetting: (SettingsRoute) -> Unit) {
             )
         }
 
-        item { SettingsGroupTitle("其他") }
+        item { SettingsGroupTitle(stringResource(R.string.other)) }
 
         item {
             SettingsItem(
-                title = "关于",
-                subtitle = "版本信息和开源许可",
+                title = stringResource(R.string.about),
+                subtitle = stringResource(R.string.about_subtitle),
                 icon = Icons.Default.Info,
                 trailing = {
                     Icon(Icons.Default.ChevronRight, contentDescription = null)

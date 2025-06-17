@@ -1,7 +1,10 @@
 package io.github.yearsyan.yaad.ui.components
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,7 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircleOutline
-import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
@@ -25,14 +28,20 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -48,6 +57,42 @@ import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CardBottomSheet(
+    onDismissRequest: () -> Unit,
+    onRemove: () -> Unit = {},
+    onOpenFile: () -> Unit = {}
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismissRequest,
+        containerColor = MaterialTheme.colorScheme.surface
+    ) {
+        ListItem(
+            headlineContent = {
+                Text(stringResource(R.string.popup_item_delete))
+            },
+            leadingContent = {
+                Icon(Icons.Default.Delete, contentDescription = null)
+            },
+            modifier =
+                Modifier.clickable(onClick = onRemove)
+                    .background(MaterialTheme.colorScheme.surface)
+        )
+        ListItem(
+            headlineContent = {
+                Text(stringResource(R.string.popup_item_open_folder))
+            },
+            leadingContent = {
+                Icon(Icons.Default.FileOpen, contentDescription = null)
+            },
+            modifier =
+                Modifier.clickable(onClick = onRemove)
+                    .background(MaterialTheme.colorScheme.surface)
+        )
+    }
+}
 
 @Composable
 fun ExtractedMediaDownloadCard(
@@ -72,14 +117,10 @@ fun ExtractedMediaDownloadCard(
                 delay(1000) // 每秒更新一次
             }
         }
+    var showPopup by remember { mutableStateOf(false) }
 
     val totalMediaCount = record.mediaUrls.size
     val completedCount = record.completedCount
-    val progressPercentage =
-        if (totalMediaCount > 0)
-            (completedCount.toFloat() / totalMediaCount) * 100
-        else 0f
-
     // 获取当前下载速度
     val totalSpeed =
         record.childSessions.sumOf { childRecord ->
@@ -88,8 +129,19 @@ fun ExtractedMediaDownloadCard(
         }
     val speedKbps = totalSpeed / 1024
 
+    if (showPopup) {
+        CardBottomSheet(
+            onDismissRequest = { showPopup = false },
+            onRemove = {
+                showPopup = false
+                onRemove(record)
+            },
+            onOpenFile = { showPopup = false }
+        )
+    }
+
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().clickable { showPopup = true },
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         shape = MaterialTheme.shapes.medium
     ) {
@@ -274,13 +326,6 @@ private fun ExtractedMediaActionButtons(
                     onOpenFile,
                     isPrimary = true
                 )
-                Spacer(modifier = Modifier.width(8.dp))
-                ExtractedMediaActionButton(
-                    stringResource(R.string.button_clear),
-                    Icons.Filled.Clear,
-                    onRemove,
-                    isPrimary = false
-                )
             }
             ExtractedMediaStatus.ERROR -> {
                 ExtractedMediaActionButton(
@@ -321,17 +366,25 @@ private fun ExtractedMediaActionButton(
     tint: Color = LocalContentColor.current
 ) {
     if (isPrimary) {
-        Button(onClick = onClick, modifier = modifier) {
+        Button(
+            onClick = onClick,
+            modifier = modifier.height(30.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+        ) {
             Icon(
                 icon,
                 contentDescription = text,
                 Modifier.size(ButtonDefaults.IconSize)
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(text)
+            Text(text, style = MaterialTheme.typography.labelSmall)
         }
     } else {
-        OutlinedButton(onClick = onClick, modifier = modifier) {
+        OutlinedButton(
+            onClick = onClick,
+            modifier = modifier.height(30.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp)
+        ) {
             Icon(
                 icon,
                 contentDescription = text,
@@ -339,7 +392,11 @@ private fun ExtractedMediaActionButton(
                 tint = tint
             )
             Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Text(text, color = tint)
+            Text(
+                text,
+                color = tint,
+                style = MaterialTheme.typography.labelSmall
+            )
         }
     }
 }
