@@ -242,10 +242,7 @@ object DownloadManager : IDownloadListener {
                 }
                 downloadTasks.add(record)
             }
-            _tasksFlow.value =
-                downloadTasks.toList().filter {
-                    it !is ChildHttpDownloadSessionRecord
-                }
+            _tasksFlow.value = filterTask(downloadTasks)
         }
     }
 
@@ -302,7 +299,7 @@ object DownloadManager : IDownloadListener {
 
         synchronized(downloadTasks) {
             downloadTasks.add(record)
-            _tasksFlow.value = downloadTasks.toList()
+            _tasksFlow.value = filterTask(downloadTasks)
         }
 
         dbHelper.saveDownloadSession(record)
@@ -342,7 +339,7 @@ object DownloadManager : IDownloadListener {
 
         synchronized(downloadTasks) {
             downloadTasks.add(record)
-            _tasksFlow.value = downloadTasks.toList()
+            _tasksFlow.value = filterTask(downloadTasks)
         }
 
         dbHelper.saveDownloadSession(record)
@@ -425,7 +422,7 @@ object DownloadManager : IDownloadListener {
 
             synchronized(downloadTasks) {
                 downloadTasks.add(childRecord)
-                _tasksFlow.value = downloadTasks.toList()
+                _tasksFlow.value = filterTask(downloadTasks)
             }
 
             dbHelper.saveDownloadSession(childRecord)
@@ -452,7 +449,7 @@ object DownloadManager : IDownloadListener {
                 synchronized(downloadTasks) {
                     session?.let { sessionMap.remove(it) }
                     downloadTasks.remove(record)
-                    _tasksFlow.value = downloadTasks.toList()
+                    _tasksFlow.value = filterTask(downloadTasks)
                 }
                 session?.stop()
                 dbHelper.deleteDownloadSession(sessionId)
@@ -462,7 +459,7 @@ object DownloadManager : IDownloadListener {
                 synchronized(downloadTasks) {
                     session?.let { sessionMap.remove(it) }
                     downloadTasks.remove(record)
-                    _tasksFlow.value = downloadTasks.toList()
+                    _tasksFlow.value = filterTask(downloadTasks)
                 }
                 session?.stop()
                 dbHelper.deleteDownloadSession(sessionId)
@@ -480,7 +477,7 @@ object DownloadManager : IDownloadListener {
                         childSessionIds.add(childRecord.sessionId)
                     }
                     downloadTasks.remove(record)
-                    _tasksFlow.value = downloadTasks.toList()
+                    _tasksFlow.value = filterTask(downloadTasks)
                 }
                 sessionsToStop.forEach { it.stop() }
 
@@ -511,15 +508,13 @@ object DownloadManager : IDownloadListener {
 
     private fun updateFlow() {
         synchronized(downloadTasks) {
-            _tasksFlow.value =
-                downloadTasks
-                    .toList()
-                    .filter {
-                        it is SingleHttpDownloadSessionRecord ||
-                            it is ExtractedMediaDownloadSessionRecord
-                    }
-                    .reversed()
+            _tasksFlow.value = filterTask(downloadTasks)
         }
+    }
+
+    private fun filterTask(tasks: List<DownloadSessionRecord>):  List<DownloadSessionRecord> {
+        return tasks.filter { it is SingleHttpDownloadSessionRecord ||
+                it is ExtractedMediaDownloadSessionRecord }.sortedByDescending { it.createAt }
     }
 
     private fun hasActiveTasks(): Boolean {

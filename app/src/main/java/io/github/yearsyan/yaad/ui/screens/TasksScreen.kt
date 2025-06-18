@@ -89,7 +89,7 @@ fun DownloadItem(
 ) {
     val context = LocalContext.current
 
-    Box(modifier = Modifier.height(220.dp)) {
+    Box(modifier = Modifier.height(100.dp)) {
         if (
             record is DownloadManager.SingleHttpDownloadSessionRecord &&
                 record.httpDownloadSession != null
@@ -108,11 +108,17 @@ fun DownloadItem(
                 scope = scope,
                 record = record,
                 modifier = Modifier.fillMaxSize(),
-                onRemove = { recordToRemove ->
+                onRemove = { recordToRemove, deleteFileAlso ->
                     scope.launch {
                         DownloadManager.deleteDownloadTask(
                             recordToRemove.sessionId
                         )
+                        if (deleteFileAlso) {
+                            val file = File(recordToRemove.savePath)
+                            if (file.exists()) {
+                                file.delete()
+                            }
+                        }
                     }
                 },
                 onOpenFile = { filePath ->

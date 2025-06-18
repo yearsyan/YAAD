@@ -24,10 +24,13 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
@@ -36,6 +39,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,13 +75,13 @@ fun CardBottomSheet(
     ) {
         ListItem(
             headlineContent = {
-                Text(stringResource(R.string.popup_item_delete))
+                Text(stringResource(R.string.button_open))
             },
             leadingContent = {
-                Icon(Icons.Default.Delete, contentDescription = null)
+                Icon(Icons.Default.FileOpen, contentDescription = null)
             },
             modifier =
-                Modifier.clickable(onClick = onRemove)
+                Modifier.clickable(onClick = onOpenFile)
                     .background(MaterialTheme.colorScheme.surface)
         )
         ListItem(
@@ -88,9 +92,21 @@ fun CardBottomSheet(
                 Icon(Icons.Default.FileOpen, contentDescription = null)
             },
             modifier =
+                Modifier.clickable(onClick = {})
+                    .background(MaterialTheme.colorScheme.surface)
+        )
+        ListItem(
+            headlineContent = {
+                Text(stringResource(R.string.popup_item_delete), color = Color.Red)
+            },
+            leadingContent = {
+                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+            },
+            modifier =
                 Modifier.clickable(onClick = onRemove)
                     .background(MaterialTheme.colorScheme.surface)
         )
+
     }
 }
 
@@ -99,8 +115,8 @@ fun ExtractedMediaDownloadCard(
     scope: CoroutineScope,
     record: DownloadManager.ExtractedMediaDownloadSessionRecord,
     modifier: Modifier = Modifier,
-    onRemove: (DownloadManager.ExtractedMediaDownloadSessionRecord) -> Unit =
-        {},
+    onRemove: (DownloadManager.ExtractedMediaDownloadSessionRecord, Boolean) -> Unit =
+        { _, _ -> },
     onOpenFile: (filePath: String) -> Unit = {}
 ) {
     // 获取实时状态
@@ -118,9 +134,8 @@ fun ExtractedMediaDownloadCard(
             }
         }
     var showPopup by remember { mutableStateOf(false) }
-
-    val totalMediaCount = record.mediaUrls.size
-    val completedCount = record.completedCount
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var deleteFileAlso by remember { mutableStateOf(false) }
     // 获取当前下载速度
     val totalSpeed =
         record.childSessions.sumOf { childRecord ->
@@ -134,9 +149,69 @@ fun ExtractedMediaDownloadCard(
             onDismissRequest = { showPopup = false },
             onRemove = {
                 showPopup = false
-                onRemove(record)
+                showDeleteConfirm = true
             },
-            onOpenFile = { showPopup = false }
+            onOpenFile = {
+                showPopup = false
+                onOpenFile(record.savePath)
+            }
+        )
+    }
+
+    // 确认删除弹窗
+    if (showDeleteConfirm) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirm = false },
+            title = { Text(stringResource(R.string.confirm_delete_title)) },
+            text = {
+                Column( modifier = Modifier.fillMaxWidth() ) {
+                    Text(stringResource(R.string.confirm_delete_message))
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Checkbox(
+                            checked = deleteFileAlso,
+                            onCheckedChange = { deleteFileAlso = it },
+                            colors = CheckboxDefaults.colors(
+                                checkedColor = MaterialTheme.colorScheme.primary
+                            )
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column {
+                            Text(
+                                text = stringResource(R.string.confirm_delete_file),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Text(
+                                text = stringResource(R.string.confirm_delete_file_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteConfirm = false
+                        onRemove(record, deleteFileAlso)
+                    }
+                ) {
+                    Text(stringResource(R.string.confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { 
+                        showDeleteConfirm = false
+                        deleteFileAlso = false
+                    }
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
         )
     }
 
@@ -149,41 +224,20 @@ fun ExtractedMediaDownloadCard(
             // 标题显示原始链接
             Text(
                 text = getDisplayName(record.title),
-                style = MaterialTheme.typography.titleLarge,
-                maxLines = 2,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-
-            Spacer(modifier = Modifier.height(8.dp))
 
             if (currentStatus != ExtractedMediaStatus.COMPLETED) {
                 Spacer(modifier = Modifier.height(8.dp))
                 ExtractDownloadProgressBar(
-                    modifier = Modifier.fillMaxWidth().height(12.dp),
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
                     record = record
                 )
             }
 
-            if (currentStatus == ExtractedMediaStatus.DOWNLOADING) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        text = "已完成: $completedCount/$totalMediaCount",
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    if (speedKbps > 0) {
-                        Text(
-                            text = FormatUtils.formatSpeed(speedKbps),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.weight(1.0f))
 
             // 状态信息
             Row(
@@ -191,67 +245,37 @@ fun ExtractedMediaDownloadCard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if (currentStatus == ExtractedMediaStatus.DOWNLOADING) {
+                    Text(
+                        text = FormatUtils.formatSpeed(speedKbps),
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                    )
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     val statusVisuals =
                         getExtractedMediaStatusVisuals(currentStatus)
                     Icon(
                         imageVector = statusVisuals.first,
                         contentDescription =
                             getExtractedMediaStatusText(currentStatus),
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(16.dp),
                         tint = statusVisuals.second
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = getExtractedMediaStatusText(currentStatus),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         color = statusVisuals.second,
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
             }
-
-            Spacer(modifier = Modifier.weight(1.0f))
-
-            ExtractedMediaActionButtons(
-                state = currentStatus,
-                onPauseAll = {
-                    scope.launch {
-                        record.childSessions.forEach { childRecord ->
-                            childRecord.httpDownloadSession?.pause()
-                        }
-                    }
-                },
-                onResumeAll = {
-                    scope.launch {
-                        record.childSessions.forEach { childRecord ->
-                            childRecord.httpDownloadSession?.resume()
-                        }
-                    }
-                },
-                onStopAll = {
-                    scope.launch {
-                        record.childSessions.forEach { childRecord ->
-                            childRecord.httpDownloadSession?.stop()
-                        }
-                    }
-                },
-                onRetryAll = {
-                    scope.launch {
-                        record.childSessions.forEach { childRecord ->
-                            childRecord.httpDownloadSession?.start()
-                        }
-                    }
-                },
-                onRemove = { scope.launch { onRemove(record) } },
-                onOpenFile = {
-                    val file = File(record.savePath)
-                    if (file.exists()) {
-                        onOpenFile(file.absolutePath)
-                    }
-                }
-            )
         }
     }
 }

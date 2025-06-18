@@ -1,6 +1,5 @@
 package io.github.yearsyan.yaad.web
 
-import android.R
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -31,7 +30,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.OpenInBrowser
@@ -62,6 +61,7 @@ import io.github.yearsyan.yaad.utils.ClipboardUtils
 fun WebViewTopBar(
     title: String,
     onBackPressed: () -> Unit,
+    onClose: () -> Unit,
     showMenu: Boolean = false,
     onMenuClick: () -> Unit = {}
 ) {
@@ -85,6 +85,12 @@ fun WebViewTopBar(
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back"
+                    )
+                }
+                IconButton(onClick = onClose) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = "Close"
                     )
                 }
                 Text(
@@ -209,6 +215,7 @@ class WebViewActivity : ComponentActivity() {
                                     finish()
                                 }
                             },
+                            onClose = { finish() },
                             showMenu = showMenu,
                             onMenuClick = { showBottomSheet = true }
                         )
