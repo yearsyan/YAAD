@@ -4,13 +4,14 @@
 #include <sys/mman.h>
 #include <android/log.h>
 #include <libtorrent/session.hpp>
+#include "bt.h"
 
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, "JNI", __VA_ARGS__)
 
 const long page_size = sysconf(_SC_PAGESIZE);
 
 
-jint native_openFile(JNIEnv* env, jobject thiz, jstring path) {
+jint native_open_file(JNIEnv* env, jobject thiz, jstring path) {
     const char* c_path = env->GetStringUTFChars(path, nullptr);
     int fd = open(c_path, O_RDWR | O_CREAT, 0666);
     env->ReleaseStringUTFChars(path, c_path);
@@ -18,13 +19,13 @@ jint native_openFile(JNIEnv* env, jobject thiz, jstring path) {
 }
 
 
-jint native_resizeFile(JNIEnv* env, jobject thiz, jint fd, jlong size) {
+jint native_resize_file(JNIEnv* env, jobject thiz, jint fd, jlong size) {
     if (fd < 0) return -1;
     return ftruncate(fd, size);
 }
 
 
-jlong native_mmapFile(JNIEnv* env, jobject thiz, jint fd, jlong size) {
+jlong native_mmap_file(JNIEnv* env, jobject thiz, jint fd, jlong size) {
     if (fd < 0 || size <= 0) return 0;
 
     // 对 size 向上对齐
@@ -45,19 +46,19 @@ jlong native_mmapFile(JNIEnv* env, jobject thiz, jint fd, jlong size) {
 }
 
 
-void native_writeByte(JNIEnv* env, jobject thiz, jlong ptr, jlong offset, jbyte value) {
+void native_write_byte(JNIEnv* env, jobject thiz, jlong ptr, jlong offset, jbyte value) {
     if (ptr == 0 || offset < 0) return;
     uint8_t* base = reinterpret_cast<uint8_t*>(ptr);
     base[offset] = static_cast<uint8_t>(value);
 }
 
-void native_writeByteArray(JNIEnv* env, jobject thiz, jlong ptr, jlong offset, jbyteArray array, jint start, jint len) {
+void native_write_byte_array(JNIEnv* env, jobject thiz, jlong ptr, jlong offset, jbyteArray array, jint start, jint len) {
     if (ptr == 0 || offset < 0) return;
     uint8_t* base = reinterpret_cast<uint8_t*>(ptr);
     env->GetByteArrayRegion(array, start, len, reinterpret_cast<jbyte*>(base + offset));
 }
 
-void native_closeFile(JNIEnv* env, jobject thiz, jint fd) {
+void native_close_file(JNIEnv* env, jobject thiz, jint fd) {
     if (fd >= 0) {
         close(fd);
     }
@@ -89,21 +90,20 @@ void native_munmap(JNIEnv* env, jobject thiz, jlong ptr, jlong size) {
     munmap(aligned_ptr, aligned_size);
 }
 
-jint native_getSystemPageSize(JNIEnv* env, jobject thiz) {
+jint native_get_system_page_size(JNIEnv* env, jobject thiz) {
     return static_cast<jint>(page_size > 0 ? page_size : 4096); // fallback to 4096 if error
 }
 
 static JNINativeMethod methods[] = {
-        {"openFile",  "(Ljava/lang/String;)I",  (void*)native_openFile},
-        {"resizeFile","(IJ)I",                  (void*)native_resizeFile},
-        {"mmapFile",  "(IJ)J",                  (void*)native_mmapFile},
-        {"writeByte", "(JJB)V",                 (void*)native_writeByte},
-        {"writeByteArray", "(JJ[BII)V", (void*)native_writeByteArray},
-        {"closeFile", "(I)V",                   (void*)native_closeFile},
+        {"openFile",  "(Ljava/lang/String;)I", (void *) native_open_file},
+        {"resizeFile","(IJ)I", (void *) native_resize_file},
+        {"mmapFile",  "(IJ)J", (void *) native_mmap_file},
+        {"writeByte", "(JJB)V", (void *) native_write_byte},
+        {"writeByteArray", "(JJ[BII)V", (void *) native_write_byte_array},
+        {"closeFile", "(I)V", (void *) native_close_file},
         {"msync",     "(JJ)V",                  (void*)native_msync},
         {"munmap", "(JJ)V", (void*)native_munmap},
-        {"getSystemPageSize", "()I", (void*)native_getSystemPageSize},
-
+        {"getSystemPageSize", "()I", (void *) native_get_system_page_size},
 };
 
 jint JNI_OnLoad(JavaVM* vm, void* reserved) {
@@ -122,6 +122,9 @@ jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         LOGI("Failed to register native methods");
         return JNI_ERR;
     }
-    libtorrent::session session;
+    if (yaad::register_bt(env) != 0) {
+        LOGI("Failed to register BT native methods");
+        return JNI_ERR;
+    }
     return JNI_VERSION_1_6;
 }

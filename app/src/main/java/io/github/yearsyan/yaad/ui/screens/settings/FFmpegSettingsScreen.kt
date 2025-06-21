@@ -2,17 +2,22 @@ package io.github.yearsyan.yaad.ui.screens.settings
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.yearsyan.yaad.R
+import io.github.yearsyan.yaad.media.FFmpegTools
 import io.github.yearsyan.yaad.model.FFmpegInstallType
 import io.github.yearsyan.yaad.ui.components.*
 import io.github.yearsyan.yaad.utils.SettingsManager
@@ -21,10 +26,29 @@ import io.github.yearsyan.yaad.utils.SettingsManager
 @Composable
 fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
     val settingsManager = remember { SettingsManager.getInstance(context) }
     val settings by settingsManager.settings.collectAsState()
+    val ffmpegConfig by remember { mutableStateOf(FFmpegTools.configuration()) }
+    var showConfigPopup by remember { mutableStateOf(false) }
 
     var customUrl by remember { mutableStateOf(settings.ffmpegCustomUrl) }
+    val bottomScrollState = rememberScrollState()
+
+    if (showConfigPopup && ffmpegConfig.isNotEmpty()) {
+        ModalBottomSheet(
+            onDismissRequest = { showConfigPopup = false }
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp).height((configuration.screenHeightDp * 0.6f).dp).verticalScroll(bottomScrollState)
+            ) {
+                Text(
+                    text = ffmpegConfig,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         // 顶部应用栏
@@ -100,6 +124,30 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
                             stringResource(
                                 R.string.ffmpeg_download_url_placeholder
                             )
+                    )
+                }
+            }
+
+            item {
+                SettingsGroupTitle(
+                    stringResource(R.string.ffmpeg_configuration)
+                )
+            }
+
+            item {
+                Card(
+                    modifier =
+                        Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    elevation =
+                        CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    onClick = { showConfigPopup = true }
+                ) {
+                    Text(
+                        text = ffmpegConfig,
+                        modifier = Modifier.padding(16.dp),
+                        maxLines = 5,
+                        style = MaterialTheme.typography.bodySmall,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

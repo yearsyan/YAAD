@@ -28,7 +28,7 @@ int isVideoFile(AVFormatContext *ctx) {
     return 0;
 }
 
-jint mergeAV(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring out) {
+jint merge_av(JNIEnv *env, jobject thiz, jstring file1, jstring file2, jstring out) {
     const char *file1Path = (*env)->GetStringUTFChars(env, file1, NULL);
     const char *file2Path = (*env)->GetStringUTFChars(env, file2, NULL);
     const char *outputPath = (*env)->GetStringUTFChars(env, out, NULL);
@@ -288,8 +288,14 @@ end:
     return ret;
 }
 
+jstring ffmpeg_configuration(JNIEnv *env, jobject thiz) {
+    const char* conf = avcodec_configuration();
+    return (*env)->NewStringUTF(env, conf);
+}
+
 static JNINativeMethod methods[] = {
-    {"mergeAV", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)mergeAV}
+    {"mergeAV", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)I", (void*)merge_av},
+    {"configuration", "()Ljava/lang/String;", (void*)ffmpeg_configuration}
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {

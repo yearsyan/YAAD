@@ -12,7 +12,7 @@ find_package(libtorrent REQUIRED CONFIG)
 add_library(
         downloader-core
         SHARED
-        lib.cpp
+        lib.cpp bt.cpp bt.h
 )
 
 find_library(log-lib log)

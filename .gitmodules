@@ -1,0 +1,3 @@
+[submodule "deps/libtorrent/libtorrent"]
+	path = deps/libtorrent/libtorrent
+	url = git@github.com:arvidn/libtorrent.git

@@ -8,5 +8,7 @@ object FFmpegTools : IMediaTools {
         out: String
     ): Int
 
+    external fun configuration(): String
+
     override fun mergeSplice(filePathList: Array<String>, out: String) {}
 }

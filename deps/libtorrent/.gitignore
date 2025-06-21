@@ -1,0 +1,12 @@
+build/
+boost_*
+logs
+build.log
+install/
+*.bz2
+*.gz
+tools/
+deps.install/
+*.zip
+openssl-*
+vcpkg_installed

@@ -9,6 +9,7 @@ import com.kongzue.dialogx.dialogs.PopTip
 import com.kongzue.dialogx.dialogs.WaitDialog
 import com.tencent.mmkv.MMKV
 import io.github.yaad.downloader_core.getSystemUserAgent
+import io.github.yaad.downloader_core.torrent.TorrentService
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.db.BuildInTrustHost
 import io.github.yearsyan.yaad.downloader.DownloadManager
@@ -141,7 +142,10 @@ object UrlHandler {
                 WaitDialog.dismiss()
             }
         } else if (link.startsWith("magnet:")) {
-            // TODO add bt download
+            withContext(Dispatchers.IO) {
+                val hash = TorrentService.instance().addTaskByLink(link, context.cacheDir.absolutePath)
+                PopTip.show("hash: $hash")
+            }
         } else if (link.isEmpty()) {
             PopTip.show(R.string.url_empty).iconWarning()
         } else {

@@ -111,6 +111,7 @@
 
     <string name="ffmpeg_settings">FFmpeg设置</string>
     <string name="ffmpeg_install_method">安装方式</string>
+    <string name="ffmpeg_configuration">构建配置</string>
     <string name="ffmpeg_source">FFmpeg获取方式</string>
     <string name="ffmpeg_source_desc">选择FFmpeg的安装来源</string>
     <string name="ffmpeg_builtin">内置版本</string>

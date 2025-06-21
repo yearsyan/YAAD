@@ -59,6 +59,7 @@ dependencies {
     implementation libs.kotlinx.serialization.json
     implementation libs.kotlinx.serialization.cbor
     implementation libs.libtorrent
+    // implementation(name: 'libtorrent', ext: 'aar')
 
     testImplementation libs.junit
     androidTestImplementation libs.androidx.junit
