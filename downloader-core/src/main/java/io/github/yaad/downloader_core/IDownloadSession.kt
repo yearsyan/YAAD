@@ -1,9 +1,17 @@
 package io.github.yaad.downloader_core
 
-interface IDownloadSession {
-    val total: Long
+open class BaseDownloadStatus(
+    val percent: Int,
+    val totalDownloaded: Long,
+    val downloadSpeed: Double,
+    val state: DownloadState,
+    val totalSize: Long,
+    val errorMessage: String? = ""
+)
 
-    fun getStatus(): DownloadStatus
+interface IDownloadSession {
+
+    fun getStatus(): BaseDownloadStatus
 
     suspend fun start(
         starResultListener: (e: Exception?) -> Unit = {},

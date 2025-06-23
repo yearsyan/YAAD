@@ -36,11 +36,12 @@ fun FFmpegSettingsScreen(onNavigateBack: () -> Unit) {
     val bottomScrollState = rememberScrollState()
 
     if (showConfigPopup && ffmpegConfig.isNotEmpty()) {
-        ModalBottomSheet(
-            onDismissRequest = { showConfigPopup = false }
-        ) {
+        ModalBottomSheet(onDismissRequest = { showConfigPopup = false }) {
             Column(
-                modifier = Modifier.padding(16.dp).height((configuration.screenHeightDp * 0.6f).dp).verticalScroll(bottomScrollState)
+                modifier =
+                    Modifier.padding(16.dp)
+                        .height((configuration.screenHeightDp * 0.6f).dp)
+                        .verticalScroll(bottomScrollState)
             ) {
                 Text(
                     text = ffmpegConfig,

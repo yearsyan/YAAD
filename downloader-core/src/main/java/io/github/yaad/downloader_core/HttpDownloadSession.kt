@@ -4,9 +4,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.HttpTimeout
-import io.ktor.client.request.get
 import io.ktor.client.request.header
-import io.ktor.client.request.headers
 import io.ktor.client.request.prepareGet
 import io.ktor.client.request.url
 import io.ktor.client.statement.HttpResponse
@@ -66,15 +64,23 @@ enum class DownloadState {
     VALIDATING
 }
 
-data class DownloadStatus(
-    val percent: Int,
-    val totalDownloaded: Long,
+class HttpDownloadStatus(
+    percent: Int,
+    totalDownloaded: Long,
     val parts: List<ThreadPartInfo>,
-    val speed: Double,
-    val state: DownloadState,
-    val totalSize: Long,
-    val errorMessage: String? = ""
-)
+    speed: Double,
+    state: DownloadState,
+    totalSize: Long,
+    errorMessage: String? = ""
+) :
+    BaseDownloadStatus(
+        percent,
+        totalDownloaded,
+        speed,
+        state,
+        totalSize,
+        errorMessage
+    )
 
 private data class ServerFileInfo(
     val supportsRange: Boolean,
@@ -125,9 +131,6 @@ class HttpDownloadSession(
             defaultHeaders.mapKeys { (key, _) -> normalizeHeaderKey(key) }
         normalizedDefaults + normalizedHeaders
     }
-
-    override val total: Long
-        get() = totalFileSize
 
     val fileName: String
         get() {
@@ -980,7 +983,7 @@ class HttpDownloadSession(
     }
 
     @Synchronized // Keep synchronized as it's accessed from different contexts
-    override fun getStatus(): DownloadStatus {
+    override fun getStatus(): HttpDownloadStatus {
         val c = checkpoint // Capture volatile read
         var totalDownloadedAllParts = 0L
         var totalSpeedAllParts = 0.0
@@ -1032,7 +1035,7 @@ class HttpDownloadSession(
                     .coerceIn(0, 100)
             }
 
-        return DownloadStatus(
+        return HttpDownloadStatus(
             percent,
             totalDownloadedAllParts,
             partsInfoCopy,

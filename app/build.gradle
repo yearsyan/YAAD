@@ -149,6 +149,7 @@ dependencies {
     implementation libs.coil.compose
     implementation libs.coil.network.ktor3
     implementation libs.ktor.client.encoding
+    implementation 'eu.agno3.jcifs:jcifs-ng:2.1.9'
     implementation project(':downloader-core')
     implementation libs.material
 

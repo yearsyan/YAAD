@@ -88,10 +88,7 @@ fun WebViewTopBar(
                     )
                 }
                 IconButton(onClick = onClose) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = "Close"
-                    )
+                    Icon(Icons.Default.Close, contentDescription = "Close")
                 }
                 Text(
                     title,

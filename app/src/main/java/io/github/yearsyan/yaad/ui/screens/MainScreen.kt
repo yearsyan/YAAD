@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.SaveAlt
 import androidx.compose.material.icons.filled.Settings
@@ -18,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.LifecycleCoroutineScope
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadViewModel
+import io.github.yearsyan.yaad.ui.components.filemanager.FileManagerScreen
 import io.github.yearsyan.yaad.ui.theme.YAADTheme
 
 data class BottomNavItem(
@@ -29,6 +31,7 @@ data class BottomNavItem(
 val bottomNavItems =
     listOf(
         BottomNavItem(R.string.nav_home, Icons.Default.Home, "home"),
+        BottomNavItem(R.string.nav_file, Icons.Default.Folder, "file"),
         BottomNavItem(R.string.nav_tasks, Icons.Default.SaveAlt, "tasks"),
         BottomNavItem(R.string.nav_settings, Icons.Default.Settings, "settings")
     )
@@ -50,9 +53,18 @@ fun MainContent(
             InputScreen(lifecycleScope)
         }
 
-        // TasksScreen - index 1
+        // FileManagerScree - index 1
         AnimatedVisibility(
             visible = selectedIndex == 1,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            FileManagerScreen(lifecycleScope)
+        }
+
+        // TasksScreen - index 2
+        AnimatedVisibility(
+            visible = selectedIndex == 2,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
@@ -61,7 +73,7 @@ fun MainContent(
 
         // SettingsScreen - index 2
         AnimatedVisibility(
-            visible = selectedIndex == 2,
+            visible = selectedIndex == 3,
             enter = fadeIn(),
             exit = fadeOut()
         ) {

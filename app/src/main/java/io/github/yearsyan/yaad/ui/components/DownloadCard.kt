@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.yaad.downloader_core.DownloadState
+import io.github.yaad.downloader_core.HttpDownloadStatus
 import io.github.yaad.downloader_core.IDownloadListener
 import io.github.yaad.downloader_core.IDownloadSession
 import io.github.yearsyan.yaad.R
@@ -83,9 +84,9 @@ fun DownloadCard(
             awaitDispose { downloadSession.removeDownloadListener(listener) }
         }
 
-    val totalSize = downloadSession.total
+    val totalSize = downloadSession.getStatus().totalSize
     val downloadedBytes = currentStatus.totalDownloaded
-    val speedKbps = currentStatus.speed / 1024
+    val speedKbps = currentStatus.downloadSpeed / 1024
     val currentState = currentStatus.state
 
     Card(
@@ -108,7 +109,7 @@ fun DownloadCard(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     MultiThreadProgressBar(
-                        status = currentStatus,
+                        status = currentStatus as HttpDownloadStatus,
                         total = totalSize,
                         modifier = Modifier.weight(1f).height(12.dp)
                     )

@@ -8,6 +8,7 @@ import io.github.yaad.downloader_core.HttpDownloadSession
 import io.github.yaad.downloader_core.IDownloadListener
 import io.github.yaad.downloader_core.IDownloadSession
 import io.github.yaad.downloader_core.getAppContext
+import io.github.yaad.downloader_core.torrent.TorrentDownloadSession
 import io.github.yearsyan.yaad.db.DownloadDatabaseHelper
 import io.github.yearsyan.yaad.media.FFmpegTools
 import io.github.yearsyan.yaad.utils.SettingsManager
@@ -48,6 +49,25 @@ object DownloadManager : IDownloadListener {
     ) {
         open fun isActiveForService(): Boolean = false
     }
+
+    class BtDownloadRecord(
+        title: String,
+        sessionId: String,
+        originLink: String,
+        recoverFile: String,
+        savePath: String = "",
+        downloadState: DownloadState = DownloadState.PENDING,
+        var session: TorrentDownloadSession? = null
+    ) :
+        DownloadSessionRecord(
+            title,
+            sessionId,
+            DownloadType.BT,
+            originLink,
+            recoverFile,
+            savePath,
+            downloadState
+        )
 
     class SingleHttpDownloadSessionRecord(
         title: String,
@@ -252,6 +272,36 @@ object DownloadManager : IDownloadListener {
 
     fun unregisterDownloadTaskListener(listener: IDownloadTaskListener) {
         synchronized(downloadListeners) { downloadListeners.remove(listener) }
+    }
+
+    fun addTorrentDownloadTaskByLink(link: String): BtDownloadRecord {
+        val sessionId = UUID.randomUUID().toString()
+        val fileDist =
+            File(context.filesDir, "bt_${System.currentTimeMillis()}")
+        val session =
+            TorrentDownloadSession.createByLink(link, fileDist.absolutePath)
+        session.addDownloadListener(this)
+        val record =
+            BtDownloadRecord(
+                title = "Torrent",
+                sessionId = sessionId,
+                originLink = link,
+                recoverFile = ""
+            )
+        record.session = session
+        sessionMap[session] = WeakReference(record)
+        downloadScope.launch(Dispatchers.IO) { session.start {} }
+
+        synchronized(downloadTasks) {
+            downloadTasks.add(record)
+            _tasksFlow.value = filterTask(downloadTasks)
+        }
+
+        dbHelper.saveDownloadSession(record)
+        synchronized(downloadListeners) {
+            downloadListeners.forEach { it.onCreateTask(session, record) }
+        }
+        return record
     }
 
     fun addHttpDownloadTask(
@@ -512,9 +562,16 @@ object DownloadManager : IDownloadListener {
         }
     }
 
-    private fun filterTask(tasks: List<DownloadSessionRecord>):  List<DownloadSessionRecord> {
-        return tasks.filter { it is SingleHttpDownloadSessionRecord ||
-                it is ExtractedMediaDownloadSessionRecord }.sortedByDescending { it.createAt }
+    private fun filterTask(
+        tasks: List<DownloadSessionRecord>
+    ): List<DownloadSessionRecord> {
+        return tasks
+            .filter {
+                it is SingleHttpDownloadSessionRecord ||
+                    it is ExtractedMediaDownloadSessionRecord ||
+                    it is BtDownloadRecord
+            }
+            .sortedByDescending { it.createAt }
     }
 
     private fun hasActiveTasks(): Boolean {

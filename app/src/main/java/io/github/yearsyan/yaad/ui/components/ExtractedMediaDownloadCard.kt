@@ -57,10 +57,8 @@ import io.github.yaad.downloader_core.DownloadState
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.utils.FormatUtils
-import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -74,9 +72,7 @@ fun CardBottomSheet(
         containerColor = MaterialTheme.colorScheme.surface
     ) {
         ListItem(
-            headlineContent = {
-                Text(stringResource(R.string.button_open))
-            },
+            headlineContent = { Text(stringResource(R.string.button_open)) },
             leadingContent = {
                 Icon(Icons.Default.FileOpen, contentDescription = null)
             },
@@ -97,16 +93,22 @@ fun CardBottomSheet(
         )
         ListItem(
             headlineContent = {
-                Text(stringResource(R.string.popup_item_delete), color = Color.Red)
+                Text(
+                    stringResource(R.string.popup_item_delete),
+                    color = Color.Red
+                )
             },
             leadingContent = {
-                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = Color.Red
+                )
             },
             modifier =
                 Modifier.clickable(onClick = onRemove)
                     .background(MaterialTheme.colorScheme.surface)
         )
-
     }
 }
 
@@ -115,8 +117,10 @@ fun ExtractedMediaDownloadCard(
     scope: CoroutineScope,
     record: DownloadManager.ExtractedMediaDownloadSessionRecord,
     modifier: Modifier = Modifier,
-    onRemove: (DownloadManager.ExtractedMediaDownloadSessionRecord, Boolean) -> Unit =
-        { _, _ -> },
+    onRemove:
+        (DownloadManager.ExtractedMediaDownloadSessionRecord, Boolean) -> Unit =
+        { _, _ ->
+        },
     onOpenFile: (filePath: String) -> Unit = {}
 ) {
     // 获取实时状态
@@ -139,8 +143,10 @@ fun ExtractedMediaDownloadCard(
     // 获取当前下载速度
     val totalSpeed =
         record.childSessions.sumOf { childRecord ->
-            childRecord.httpDownloadSession?.getStatus()?.speed?.toDouble()
-                ?: 0.0
+            childRecord.httpDownloadSession
+                ?.getStatus()
+                ?.downloadSpeed
+                ?.toDouble() ?: 0.0
         }
     val speedKbps = totalSpeed / 1024
 
@@ -164,29 +170,36 @@ fun ExtractedMediaDownloadCard(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(stringResource(R.string.confirm_delete_title)) },
             text = {
-                Column( modifier = Modifier.fillMaxWidth() ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Text(stringResource(R.string.confirm_delete_message))
                     Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = deleteFileAlso,
                             onCheckedChange = { deleteFileAlso = it },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = MaterialTheme.colorScheme.primary
-                            )
+                            colors =
+                                CheckboxDefaults.colors(
+                                    checkedColor =
+                                        MaterialTheme.colorScheme.primary
+                                )
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = stringResource(R.string.confirm_delete_file),
+                                text =
+                                    stringResource(
+                                        R.string.confirm_delete_file
+                                    ),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = stringResource(R.string.confirm_delete_file_desc),
+                                text =
+                                    stringResource(
+                                        R.string.confirm_delete_file_desc
+                                    ),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -204,7 +217,7 @@ fun ExtractedMediaDownloadCard(
             },
             dismissButton = {
                 TextButton(
-                    onClick = { 
+                    onClick = {
                         showDeleteConfirm = false
                         deleteFileAlso = false
                     }

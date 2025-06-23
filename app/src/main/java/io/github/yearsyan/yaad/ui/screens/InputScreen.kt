@@ -75,7 +75,10 @@ fun InputScreen(scope: CoroutineScope) {
                     showVideoInfo(link, it)
                 }
             }
-            analyzing = false
+            withContext(Dispatchers.Main) {
+                urlText = ""
+                analyzing = false
+            }
         }
     }
 

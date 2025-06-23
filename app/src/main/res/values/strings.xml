@@ -3,6 +3,7 @@
     <string name="app_name">YAAD</string>
 
     <string name="nav_home">首页</string>
+    <string name="nav_file">文件</string>
     <string name="nav_tasks">任务</string>
     <string name="nav_settings">设置</string>
 

@@ -31,6 +31,7 @@ import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.downloader.DownloadViewModel
 import io.github.yearsyan.yaad.ui.components.DownloadCard
 import io.github.yearsyan.yaad.ui.components.ExtractedMediaDownloadCard
+import io.github.yearsyan.yaad.ui.components.TorrentDownloadCard
 import java.io.File
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -139,6 +140,15 @@ fun DownloadItem(
                     val chooser = Intent.createChooser(intent, "选择播放器")
                     context.startActivity(chooser)
                 }
+            )
+        } else if (
+            record is DownloadManager.BtDownloadRecord && record.session != null
+        ) {
+            TorrentDownloadCard(
+                scope = scope,
+                downloadSession = record.session!!,
+                fileName = record.title,
+                modifier = Modifier.fillMaxSize()
             )
         }
     }

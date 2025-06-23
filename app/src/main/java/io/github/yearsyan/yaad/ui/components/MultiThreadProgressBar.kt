@@ -15,11 +15,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.unit.dp
-import io.github.yaad.downloader_core.DownloadStatus
+import io.github.yaad.downloader_core.HttpDownloadStatus
 
 @Composable
 fun MultiThreadProgressBar(
-    status: DownloadStatus,
+    status: HttpDownloadStatus,
     total: Long,
     modifier: Modifier = Modifier
 ) {
