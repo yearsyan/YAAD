@@ -18,6 +18,8 @@ interface IFileNodeProvider {
     val iconType: IconType
         get() = IconType.DEFAULT
 
+    val fileSize: Long
+
     fun listFiles(): List<IFileNodeProvider>
 
     fun canRead(): Boolean
@@ -35,6 +37,8 @@ interface IFileNodeProvider {
     fun getBitmapIcon(): Bitmap
 
     fun getResIdIcon(): Int
+
+    fun rename(name: String)
 }
 
 interface IFileProvider {

@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -22,14 +23,26 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -40,12 +53,16 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import io.github.yearsyan.yaad.R
+import io.github.yearsyan.yaad.ui.components.formatBytes
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -90,7 +107,8 @@ fun FileIconImage(file: IFileNodeProvider, modifier: Modifier = Modifier) {
 fun FileItemCard(
     file: IFileNodeProvider,
     overrideTitle: String = "",
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {}
 ) {
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -107,7 +125,7 @@ fun FileItemCard(
                     indication = null,
                     interactionSource = interactionSource,
                     onClick = onClick,
-                    onLongClick = {}
+                    onLongClick = onLongClick
                 )
     ) {
         Row(
@@ -139,6 +157,59 @@ fun FileItemCard(
 }
 
 @Composable
+fun FileMenu(file: IFileNodeProvider) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(16.dp)
+        ) {
+            FileIconImage(file)
+            Spacer(modifier = Modifier.width(8.dp))
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    text = file.name,
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = formatBytes(file.fileSize),
+                    style = MaterialTheme.typography.titleSmall
+                )
+            }
+        }
+        if (!file.isDirectory) {
+            Box(Modifier.clickable(onClick = {})) {
+                Row(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.FileOpen, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.file_op_open))
+                }
+            }
+        }
+        Box(Modifier.clickable(onClick = {})) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = Color.Red
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.file_op_delete), color = Color.Red)
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun FileList(
     fileRootProvider: () -> IFileNodeProvider,
     modifier: Modifier = Modifier,
@@ -148,10 +219,12 @@ fun FileList(
     var fileList by remember {
         mutableStateOf<List<IFileNodeProvider>>(emptyList())
     }
+    var fileMenu by remember { mutableStateOf<IFileNodeProvider?>(null) }
     var loading by remember { mutableStateOf(true) }
     var fileStack by remember {
         mutableStateOf<List<IFileNodeProvider>>(emptyList())
     }
+    val hScrollState = rememberScrollState()
 
     val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -216,11 +289,80 @@ fun FileList(
         Unit
     }
 
+    val jumpToStackIndex = jumpToStackIndex@{ index: Int ->
+        if  (index == fileStack.size -1) {
+            return@jumpToStackIndex
+        }
+        val job =
+            coroutineScope.launch(Dispatchers.Main) {
+                delay(50)
+                loading = true
+            }
+        coroutineScope.launch(Dispatchers.IO) {
+            val dir = fileStack[index]
+            val files = dir.listFiles()
+            withContext(Dispatchers.Main) {
+                fileStack = fileStack.subList(0, index + 1)
+                fileList = files.toList()
+                if (job.isActive) {
+                    job.cancel()
+                }
+                loading = false
+            }
+        }
+        Unit
+    }
+
+    val onLongClick = { file: IFileNodeProvider -> fileMenu = file }
+
+    fileMenu?.let {
+        ModalBottomSheet(onDismissRequest = { fileMenu = null }) {
+            FileMenu(it)
+        }
+    }
+
     Column(modifier = modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().background(Color(0, 0, 0, 10)),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(38.dp)
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
             horizontalArrangement = Arrangement.End,
         ) {
+            Row(
+                modifier =
+                    Modifier.weight(1.0f)
+                        .fillMaxHeight()
+                        .horizontalScroll(hScrollState)
+            ) {
+                fileStack.forEachIndexed { index, fileEntry ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxHeight().padding(horizontal = 4.dp).clickable{
+                            jumpToStackIndex(index)
+                        }
+                    ) {
+                        Icon(
+                            Icons.Default.Folder,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        Text(
+                            fileEntry.name,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        Spacer(modifier = Modifier.width(2.dp))
+                        if (index < fileStack.size - 1) {
+                            Icon(
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                }
+            }
             Box(modifier = Modifier.clickable { onCloseClick() }) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -246,7 +388,11 @@ fun FileList(
                     key = { index -> fileList[index].path }
                 ) { index ->
                     val file = fileList[index]
-                    FileItemCard(file = file, onClick = { onFileClick(file) })
+                    FileItemCard(
+                        file = file,
+                        onClick = { onFileClick(file) },
+                        onLongClick = { onLongClick(file) }
+                    )
                 }
             }
 
@@ -266,9 +412,7 @@ fun FileList(
 
 @Composable
 fun FileEntryItem(text: String, onClick: () -> Unit = {}) {
-    Box(
-         modifier = Modifier.clickable(onClick = onClick)
-    ) {
+    Box(modifier = Modifier.clickable(onClick = onClick)) {
         Column(
             modifier = Modifier.padding(8.dp).fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -279,27 +423,28 @@ fun FileEntryItem(text: String, onClick: () -> Unit = {}) {
                 contentDescription = "folder"
             )
             Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = text,
-                style = MaterialTheme.typography.titleSmall
-            )
+            Text(text = text, style = MaterialTheme.typography.titleSmall)
         }
     }
-
 }
 
 @Composable
-fun FileEntries(modifier: Modifier = Modifier, onProvideSuccess: (() ->IFileNodeProvider) -> Unit = {}) {
+fun FileEntries(
+    modifier: Modifier = Modifier,
+    onProvideSuccess: (() -> IFileNodeProvider) -> Unit = {}
+) {
     val context = LocalContext.current
     Column(
         modifier = modifier.padding(12.dp),
         horizontalAlignment = Alignment.Start
     ) {
-        Text(
-            text = "Local File",
-            style = MaterialTheme.typography.titleMedium
+        Text(text = "Local File", style = MaterialTheme.typography.titleMedium)
+        Spacer(
+            modifier =
+                Modifier.height(1.dp)
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.onSurface)
         )
-        Spacer(modifier = Modifier.height(1.dp).fillMaxWidth().background(MaterialTheme.colorScheme.onSurface))
         LazyVerticalGrid(
             columns = GridCells.Adaptive(minSize = 64.dp), // 每个 item 最小宽度 120dp
             verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -315,24 +460,54 @@ fun FileEntries(modifier: Modifier = Modifier, onProvideSuccess: (() ->IFileNode
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FileManagerScreen(scope: CoroutineScope) {
-    val providers = remember { mutableStateListOf<() ->IFileNodeProvider>() }
-    Row(modifier = Modifier.fillMaxWidth()) {
-        if (providers.isEmpty()) {
-            FileEntries (modifier = Modifier.weight(1.0f).fillMaxHeight()) {
-                providers.add(it)
+fun TopBarWithMenu() {
+    var expanded by remember { mutableStateOf(false) }
+    TopAppBar(
+        title = { Text("File Manager") },
+        colors =
+            TopAppBarDefaults.topAppBarColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainer
+            ),
+        actions = {
+            IconButton(onClick = { expanded = true }) {
+                Icon(Icons.Default.MoreVert, contentDescription = "Menu")
+            }
+
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                DropdownMenuItem(
+                    text = { Text("Add") },
+                    onClick = {
+                        expanded = false
+                    }
+                )
             }
         }
-        providers.forEach {
-            FileList(
-                fileRootProvider = it,
-                modifier = Modifier.weight(1.0f),
-                onCloseClick = {
-                    providers.remove(it)
+    )
+}
+
+@Composable
+fun FileManagerScreen(scope: CoroutineScope) {
+    val providers = remember { mutableStateListOf<() -> IFileNodeProvider>() }
+    Column {
+        TopBarWithMenu()
+        Row(modifier = Modifier.fillMaxWidth()) {
+            if (providers.isEmpty()) {
+                FileEntries(modifier = Modifier.weight(1.0f).fillMaxHeight()) {
+                    providers.add(it)
                 }
-            )
+            }
+            providers.forEach {
+                FileList(
+                    fileRootProvider = it,
+                    modifier = Modifier.weight(1.0f),
+                    onCloseClick = { providers.remove(it) }
+                )
+            }
         }
     }
-
 }

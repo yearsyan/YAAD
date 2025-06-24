@@ -21,4 +21,16 @@ object FormatUtils {
         }
         return String.format(Locale.getDefault(), "%.2f %s", value, units[i])
     }
+
+    fun formatSize(size: Long): String {
+        if (size < 0) return "unknown size"
+        val units = arrayOf("B", "KB", "MB", "GB", "TB")
+        var i = 0
+        var value = size.toDouble()
+        while (value >= 1024 && i < units.size - 1) {
+            value /= 1024.0
+            i++
+        }
+        return String.format(Locale.getDefault(), "%.2f %s", value, units[i])
+    }
 }

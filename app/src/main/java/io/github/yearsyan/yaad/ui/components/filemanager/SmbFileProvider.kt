@@ -9,10 +9,12 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
+import jcifs.CIFSContext
 import jcifs.smb.SmbFile
 
 class SmbFileProvider(
     private val file: SmbFile,
+    private val context: CIFSContext,
     private val isRoot: Boolean = false
 ) : IFileNodeProvider {
 
@@ -21,9 +23,13 @@ class SmbFileProvider(
     private val iconTypeInternal: IconType
     private val imageVectorIcon: ImageVector?
     private val bitmapIcon: Bitmap? = null
+    private val sizeInternal: Long
 
     override val iconType: IconType
         get() = iconTypeInternal
+
+    override val fileSize: Long
+        get() = sizeInternal
 
     override val isDirectory: Boolean
         get() = file.isDirectory
@@ -61,13 +67,14 @@ class SmbFileProvider(
             )
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
         subTitleInternal = date.format(formatter)
+        sizeInternal = file.contentLengthLong
     }
 
     override fun listFiles(): List<IFileNodeProvider> {
         return file
             .listFiles()
             .filter { !(isRoot && it.name == "IPC$/") }
-            .map { SmbFileProvider(it) }
+            .map { SmbFileProvider(it, context) }
     }
 
     override fun canRead(): Boolean {
@@ -106,5 +113,9 @@ class SmbFileProvider(
 
     override fun getResIdIcon(): Int {
         throw RuntimeException("Icon Type Error")
+    }
+
+    override fun rename(name: String) {
+        file.renameTo(SmbFile("${file.parent}${name}", context))
     }
 }

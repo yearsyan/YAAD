@@ -41,14 +41,16 @@ fun MainContent(
     modifier: Modifier = Modifier,
     selectedIndex: Int,
     downloadViewModel: DownloadViewModel,
-    lifecycleScope: LifecycleCoroutineScope
+    lifecycleScope: LifecycleCoroutineScope,
+    innerPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         // InputScreen - index 0
         AnimatedVisibility(
             visible = selectedIndex == 0,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
+            modifier = Modifier.padding(innerPadding)
         ) {
             InputScreen(lifecycleScope)
         }
@@ -66,7 +68,8 @@ fun MainContent(
         AnimatedVisibility(
             visible = selectedIndex == 2,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
+            modifier = Modifier.padding(innerPadding)
         ) {
             TasksScreen(lifecycleScope, downloadViewModel)
         }
@@ -75,7 +78,8 @@ fun MainContent(
         AnimatedVisibility(
             visible = selectedIndex == 3,
             enter = fadeIn(),
-            exit = fadeOut()
+            exit = fadeOut(),
+            modifier = Modifier.padding(innerPadding)
         ) {
             SettingsScreen()
         }
@@ -119,7 +123,11 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
                     }
                 }
         ) { innerPadding ->
-            Row(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            Row(
+                modifier =
+                    Modifier.fillMaxSize()
+                        .padding(bottom = innerPadding.calculateBottomPadding())
+            ) {
                 if (useLrNav) {
                     NavigationRail(
                         modifier = Modifier.fillMaxHeight(),
@@ -151,7 +159,9 @@ fun MainScreen(lifecycleScope: LifecycleCoroutineScope) {
                 MainContent(
                     selectedIndex = selectedIndex,
                     downloadViewModel = downloadViewModel,
-                    lifecycleScope = lifecycleScope
+                    lifecycleScope = lifecycleScope,
+                    innerPadding =
+                        PaddingValues(top = innerPadding.calculateTopPadding())
                 )
             }
         }

@@ -23,6 +23,9 @@ class LocalFileProvider(private val file: File) : IFileNodeProvider {
     override val iconType: IconType
         get() = IconType.IMAGE_VECTOR
 
+    override val fileSize: Long
+        get() = file.length()
+
     override fun listFiles(): List<IFileNodeProvider> {
         val fileList = file.listFiles()
         if (fileList == null) {
@@ -65,5 +68,9 @@ class LocalFileProvider(private val file: File) : IFileNodeProvider {
 
     override fun getResIdIcon(): Int {
         throw RuntimeException("Icon Type Error")
+    }
+
+    override fun rename(name: String) {
+        file.renameTo(File(file.parentFile, name))
     }
 }

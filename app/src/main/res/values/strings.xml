@@ -179,4 +179,7 @@
     <string name="notification_disabled">已关闭</string>
     <string name="about_subtitle">版本信息和开源许可</string>
     <string name="settings_select_item">从左侧选择要配置的设置项</string>
+
+    <string name="file_op_open">打开</string>
+    <string name="file_op_delete">删除</string>
 </resources>
