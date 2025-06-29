@@ -145,4 +145,20 @@ object FileUtils {
             else -> "video/*"
         }
     }
+
+    public fun isVideoFile(fileName: String): Boolean {
+        return when (fileName.substringAfterLast('.', "").lowercase()) {
+            "mp4",
+            "avi",
+            "mkv",
+            "mov",
+            "wmv",
+            "flv",
+            "webm",
+            "m4v",
+            "3gp",
+            "ts" -> true
+            else -> false
+        }
+    }
 }

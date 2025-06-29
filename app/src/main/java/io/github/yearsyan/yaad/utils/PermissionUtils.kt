@@ -12,8 +12,12 @@ object PermissionUtils {
     fun getRequiredStoragePermissions(): Array<String> {
         return when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> {
-                // Android 13+ 需要READ_MEDIA_VIDEO权限
-                arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
+                // Android 13+ 需要READ_MEDIA_*权限
+                arrayOf(
+                    Manifest.permission.READ_MEDIA_VIDEO,
+                    Manifest.permission.READ_MEDIA_IMAGES,
+                    Manifest.permission.READ_MEDIA_AUDIO
+                )
             }
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q -> {
                 // Android 10-12 不需要特殊权限，使用MediaStore API

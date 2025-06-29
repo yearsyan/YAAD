@@ -150,7 +150,9 @@ dependencies {
     implementation libs.coil.network.ktor3
     implementation libs.ktor.client.encoding
     implementation 'eu.agno3.jcifs:jcifs-ng:2.1.9'
+    implementation "androidx.media3:media3-exoplayer:1.7.1"
     implementation project(':downloader-core')
+    api project(':player')
     implementation libs.material
 
     testImplementation libs.junit

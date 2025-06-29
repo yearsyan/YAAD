@@ -21,10 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
@@ -53,7 +50,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
@@ -62,7 +58,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.yearsyan.yaad.R
+import io.github.yearsyan.yaad.filemanager.IFileNodeProvider
+import io.github.yearsyan.yaad.filemanager.IconType
+import io.github.yearsyan.yaad.services.SmbDiscoveryManager
 import io.github.yearsyan.yaad.ui.components.formatBytes
+import io.github.yearsyan.yaad.ui.player.PlayerActivity
+import io.github.yearsyan.yaad.utils.FileUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -249,6 +250,11 @@ fun FileList(
         }
     }
 
+    LaunchedEffect(fileStack) {
+        delay(50)
+        hScrollState.animateScrollTo(hScrollState.maxValue)
+    }
+
     val goBack = {
         val job =
             coroutineScope.launch(Dispatchers.Main) {
@@ -282,6 +288,12 @@ fun FileList(
                 }
             } else {
                 withContext(Dispatchers.Main) {
+                    if (FileUtils.isVideoFile(file.name)) {
+                        file.uri?.let {
+                            PlayerActivity.startWithUri(context, it.toString())
+                        }
+                        return@withContext
+                    }
                     Toast.makeText(context, "文件点击事件", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -290,7 +302,7 @@ fun FileList(
     }
 
     val jumpToStackIndex = jumpToStackIndex@{ index: Int ->
-        if  (index == fileStack.size -1) {
+        if (index == fileStack.size - 1) {
             return@jumpToStackIndex
         }
         val job =
@@ -338,9 +350,10 @@ fun FileList(
                 fileStack.forEachIndexed { index, fileEntry ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxHeight().padding(horizontal = 4.dp).clickable{
-                            jumpToStackIndex(index)
-                        }
+                        modifier =
+                            Modifier.fillMaxHeight()
+                                .padding(horizontal = 4.dp)
+                                .clickable { jumpToStackIndex(index) }
                     ) {
                         Icon(
                             Icons.Default.Folder,
@@ -410,60 +423,18 @@ fun FileList(
     }
 }
 
-@Composable
-fun FileEntryItem(text: String, onClick: () -> Unit = {}) {
-    Box(modifier = Modifier.clickable(onClick = onClick)) {
-        Column(
-            modifier = Modifier.padding(8.dp).fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Folder,
-                modifier = Modifier.size(38.dp),
-                contentDescription = "folder"
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(text = text, style = MaterialTheme.typography.titleSmall)
-        }
-    }
-}
-
-@Composable
-fun FileEntries(
-    modifier: Modifier = Modifier,
-    onProvideSuccess: (() -> IFileNodeProvider) -> Unit = {}
-) {
-    val context = LocalContext.current
-    Column(
-        modifier = modifier.padding(12.dp),
-        horizontalAlignment = Alignment.Start
-    ) {
-        Text(text = "Local File", style = MaterialTheme.typography.titleMedium)
-        Spacer(
-            modifier =
-                Modifier.height(1.dp)
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.onSurface)
-        )
-        LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 64.dp), // 每个 item 最小宽度 120dp
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxSize()
-        ) {
-            item {
-                FileEntryItem("App file") {
-                    onProvideSuccess { LocalFileProvider(context.filesDir) }
-                }
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBarWithMenu() {
     var expanded by remember { mutableStateOf(false) }
+    var showAlert by remember { mutableStateOf(false) }
+
+    if (showAlert) {
+        ModalBottomSheet(onDismissRequest = { showAlert = false }) {
+            FileEntries()
+        }
+    }
+
     TopAppBar(
         title = { Text("File Manager") },
         colors =
@@ -483,6 +454,7 @@ fun TopBarWithMenu() {
                     text = { Text("Add") },
                     onClick = {
                         expanded = false
+                        showAlert = true
                     }
                 )
             }
@@ -493,6 +465,13 @@ fun TopBarWithMenu() {
 @Composable
 fun FileManagerScreen(scope: CoroutineScope) {
     val providers = remember { mutableStateListOf<() -> IFileNodeProvider>() }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        SmbDiscoveryManager.initialize(context)
+        SmbDiscoveryManager.startDiscovery()
+    }
+
     Column {
         TopBarWithMenu()
         Row(modifier = Modifier.fillMaxWidth()) {

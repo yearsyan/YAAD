@@ -1,6 +1,7 @@
-package io.github.yearsyan.yaad.ui.components.filemanager
+package io.github.yearsyan.yaad.filemanager
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.ui.graphics.vector.ImageVector
 
 enum class IconType {
@@ -17,6 +18,7 @@ interface IFileNodeProvider {
     val subTitle: String
     val iconType: IconType
         get() = IconType.DEFAULT
+    val uri: Uri?
 
     val fileSize: Long
 
@@ -41,6 +43,6 @@ interface IFileNodeProvider {
     fun rename(name: String)
 }
 
-interface IFileProvider {
-    fun createByLink(url: String): IFileNodeProvider
+interface IFileProvider<T> {
+    fun requestCreate(data: T, onResult: (IFileNodeProvider) -> Unit)
 }

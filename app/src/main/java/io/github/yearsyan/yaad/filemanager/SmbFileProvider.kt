@@ -1,6 +1,8 @@
-package io.github.yearsyan.yaad.ui.components.filemanager
+package io.github.yearsyan.yaad.filemanager
 
 import android.graphics.Bitmap
+import android.net.Uri
+import android.net.nsd.NsdServiceInfo
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
@@ -11,6 +13,13 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import jcifs.CIFSContext
 import jcifs.smb.SmbFile
+
+class SmbEntryProvider() : IFileProvider<NsdServiceInfo> {
+    override fun requestCreate(
+        data: NsdServiceInfo,
+        onResult: (IFileNodeProvider) -> Unit
+    ) {}
+}
 
 class SmbFileProvider(
     private val file: SmbFile,
@@ -27,6 +36,8 @@ class SmbFileProvider(
 
     override val iconType: IconType
         get() = iconTypeInternal
+    override val uri: Uri
+        get() = Uri.parse(file.url.toString())
 
     override val fileSize: Long
         get() = sizeInternal

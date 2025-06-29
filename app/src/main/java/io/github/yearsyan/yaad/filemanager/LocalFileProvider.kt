@@ -1,6 +1,7 @@
-package io.github.yearsyan.yaad.ui.components.filemanager
+package io.github.yearsyan.yaad.filemanager
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
@@ -22,6 +23,8 @@ class LocalFileProvider(private val file: File) : IFileNodeProvider {
 
     override val iconType: IconType
         get() = IconType.IMAGE_VECTOR
+    override val uri: Uri
+        get() = Uri.fromFile(file)
 
     override val fileSize: Long
         get() = file.length()
