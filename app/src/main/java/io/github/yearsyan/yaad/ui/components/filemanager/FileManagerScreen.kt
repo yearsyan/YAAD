@@ -57,6 +57,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.kongzue.dialogx.dialogs.PopTip
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.filemanager.IFileNodeProvider
 import io.github.yearsyan.yaad.filemanager.IconType
@@ -69,6 +70,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.IOException
 
 @Composable
 fun FileIconImage(file: IFileNodeProvider, modifier: Modifier = Modifier) {
@@ -280,11 +282,19 @@ fun FileList(
         coroutineScope.launch(Dispatchers.IO) {
             if (file.isDirectory) {
                 loading = true
-                val files = file.listFiles()
-                withContext(Dispatchers.Main) {
-                    fileStack = fileStack + file
-                    fileList = files.toList()
-                    loading = false
+                try {
+                    val files = file.listFiles()
+                    withContext(Dispatchers.Main) {
+                        fileStack = fileStack + file
+                        fileList = files.toList()
+
+                    }
+                } catch (e: IOException) {
+                    PopTip.show(e.message ?: "Unknown error")
+                } finally {
+                    withContext(Dispatchers.Main) {
+                        loading = false
+                    }
                 }
             } else {
                 withContext(Dispatchers.Main) {

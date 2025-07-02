@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import java.net.Inet6Address
+import java.net.NetworkInterface
 
 data class ComponentInfo(val name: String, val icon: Drawable)
 
@@ -20,4 +22,21 @@ fun ComponentName.getComponentInfo(context: Context): ComponentInfo? {
         e.printStackTrace()
     }
     return null
+}
+
+fun isGlobalIPv6Available(): Boolean {
+    val interfaces = NetworkInterface.getNetworkInterfaces()
+
+    for (iface in interfaces) {
+        if (!iface.isUp || iface.isLoopback) continue
+
+        val addresses = iface.inetAddresses
+        for (addr in addresses) {
+            if (addr is Inet6Address && !addr.isLoopbackAddress && !addr.isLinkLocalAddress) {
+                // 找到一个全局 IPv6 地址
+                return true
+            }
+        }
+    }
+    return false
 }

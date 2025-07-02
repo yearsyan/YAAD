@@ -23,6 +23,7 @@ class LocalFileProvider(private val file: File) : IFileNodeProvider {
 
     override val iconType: IconType
         get() = IconType.IMAGE_VECTOR
+
     override val uri: Uri
         get() = Uri.fromFile(file)
 

@@ -5,7 +5,6 @@ import android.content.pm.ActivityInfo
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -65,7 +64,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 
 fun hideSystemUI(activity: Activity) {
     val controller = activity.window.insetsController
@@ -83,7 +81,6 @@ fun showSystemUI(activity: Activity) {
     )
 }
 
-
 fun formatDuration(millis: Long): String {
     val totalSeconds = millis / 1000
     val hours = totalSeconds / 3600
@@ -97,7 +94,6 @@ fun formatDuration(millis: Long): String {
     }
 }
 
-
 @Composable
 fun PlayProgress(
     playPosition: Long,
@@ -108,75 +104,76 @@ fun PlayProgress(
 ) {
     val h = 12.dp
     BoxWithConstraints(
-        modifier = modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
-            .height(h) // 包括进度条和拖动图标的高度
-            .pointerInput(Unit) {
-                detectTapGestures { offset ->
-                    val clickedFraction = offset.x / size.width
-                    val seekPosition = (clickedFraction * durationMs).toLong().coerceIn(0, durationMs)
-                    onRequestSeek(seekPosition)
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .height(h) // 包括进度条和拖动图标的高度
+                .pointerInput(Unit) {
+                    detectTapGestures { offset ->
+                        val clickedFraction = offset.x / size.width
+                        val seekPosition =
+                            (clickedFraction * durationMs)
+                                .toLong()
+                                .coerceIn(0, durationMs)
+                        onRequestSeek(seekPosition)
+                    }
                 }
-            }
     ) {
         val progressFraction = playPosition.toFloat() / durationMs
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(height)
-                .align(Alignment.CenterStart)
-                .clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.background)
+            modifier =
+                Modifier.fillMaxWidth()
+                    .height(height)
+                    .align(Alignment.CenterStart)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(MaterialTheme.colorScheme.background)
         )
         Box(
-            modifier = Modifier
-                .fillMaxWidth(progressFraction)
-                .height(height)
-                .align(Alignment.CenterStart)
-                .background(MaterialTheme.colorScheme.primary)
+            modifier =
+                Modifier.fillMaxWidth(progressFraction)
+                    .height(height)
+                    .align(Alignment.CenterStart)
+                    .background(MaterialTheme.colorScheme.primary)
         )
 
         Box(
-            modifier = Modifier
-                .fillMaxWidth(progressFraction)
-                .align(Alignment.CenterStart)
-                .height(h)
+            modifier =
+                Modifier.fillMaxWidth(progressFraction)
+                    .align(Alignment.CenterStart)
+                    .height(h)
         ) {
             Icon(
                 Icons.Default.Adb,
                 contentDescription = null,
-                modifier = Modifier
-                    .size(h)
-                    .align(Alignment.CenterEnd)
-                    .offset(x = 6.dp)
+                modifier =
+                    Modifier.size(h).align(Alignment.CenterEnd).offset(x = 6.dp)
             )
         }
     }
 }
 
-enum class DragMode { HORIZONTAL, VERTICAL }
+enum class DragMode {
+    HORIZONTAL,
+    VERTICAL
+}
 
 @Composable
 private fun NormalPanel(
     requestFullScreenUpdate: (Boolean) -> Unit = {},
     modifier: Modifier,
-    doSeek : (ts: Long) -> Unit,
+    doSeek: (ts: Long) -> Unit,
     contentColor: Color,
     state: PlayPauseButtonState,
     durationMs: Long,
     positionMs: Long
 ) {
-    val normalIconSize  = 28.dp
+    val normalIconSize = 28.dp
     val icon =
         if (state.showPlay) Icons.Default.PlayArrow else Icons.Default.Pause
 
-    Box(
-        modifier =
-            modifier
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-    ) {
-        Row (
+    Box(modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
+        Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
@@ -209,9 +206,7 @@ private fun NormalPanel(
             }
 
             IconButton(
-                onClick = {
-                    requestFullScreenUpdate(true)
-                },
+                onClick = { requestFullScreenUpdate(true) },
                 modifier = Modifier.size(normalIconSize),
                 enabled = state.isEnabled
             ) {
@@ -230,7 +225,7 @@ private fun NormalPanel(
 private fun FullscreenPanel(
     requestFullScreenUpdate: (Boolean) -> Unit = {},
     modifier: Modifier,
-    doSeek : (ts: Long) -> Unit,
+    doSeek: (ts: Long) -> Unit,
     title: String = "",
     contentColor: Color,
     state: PlayPauseButtonState,
@@ -242,14 +237,9 @@ private fun FullscreenPanel(
     val icon =
         if (state.showPlay) Icons.Default.PlayArrow else Icons.Default.Pause
 
-    Box(
-        modifier =
-            modifier
-                .padding(horizontal = 12.dp, vertical = 4.dp)
-    ) {
+    Box(modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp)) {
         Row(
-            modifier =
-                Modifier.fillMaxWidth().align(Alignment.TopCenter),
+            modifier = Modifier.fillMaxWidth().align(Alignment.TopCenter),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(horizontalArrangement = Arrangement.SpaceBetween) {
@@ -271,12 +261,12 @@ private fun FullscreenPanel(
         }
 
         Column(
-            modifier =
-                Modifier.fillMaxWidth().align(Alignment.BottomCenter),
+            modifier = Modifier.fillMaxWidth().align(Alignment.BottomCenter),
             horizontalAlignment = Alignment.Start
         ) {
             Text(
-                text = "${formatDuration(positionMs)}/${formatDuration(durationMs)}",
+                text =
+                    "${formatDuration(positionMs)}/${formatDuration(durationMs)}",
                 color = contentColor,
                 style = MaterialTheme.typography.labelMedium
             )
@@ -346,13 +336,18 @@ fun VideoPlayer(
     var seekPosition by remember { mutableStateOf(-1L) }
     var stashSpeed by remember { mutableStateOf(-1f) }
 
-    val doSeek : (ts: Long) -> Unit = {  ts ->
+    val doSeek: (ts: Long) -> Unit = { ts ->
         seekPosition = ts
         player.seekTo(ts)
     }
 
-    val showPos = if (seekPosition >= 0) { seekPosition } else { progressPosition }
-    val deltaVolume : (delta: Int) -> Unit = {
+    val showPos =
+        if (seekPosition >= 0) {
+            seekPosition
+        } else {
+            progressPosition
+        }
+    val deltaVolume: (delta: Int) -> Unit = {
         val newVolume = (player.volume * 100 + it).coerceIn(0f, 100f) / 100f
         player.volume = newVolume
     }
@@ -407,11 +402,10 @@ fun VideoPlayer(
                         reason: Int
                     ) {
                         if (reason == Player.DISCONTINUITY_REASON_SEEK) {
-                            seekPosition  = -1L
-                            progressPosition  = newPosition.positionMs
+                            seekPosition = -1L
+                            progressPosition = newPosition.positionMs
                         }
                     }
-
                 }
             addListener(listener!!)
         }
@@ -460,17 +454,18 @@ fun VideoPlayer(
         )
 
         GestureControlBox(
-            modifier  = Modifier.matchParentSize(),
+            modifier = Modifier.matchParentSize(),
             onRequestPanelTap = {
                 val nextState = !showPanel
                 hideJob?.cancel()
                 if (nextState) {
-                    hideJob = scope.launch(Dispatchers.Main) {
-                        delay(controlShowTime)
-                        showPanel = false
-                    }
+                    hideJob =
+                        scope.launch(Dispatchers.Main) {
+                            delay(controlShowTime)
+                            showPanel = false
+                        }
                 }
-                showPanel =  nextState
+                showPanel = nextState
             },
             onRequestPlayStateTap = {
                 if (state.isEnabled) {
@@ -517,6 +512,5 @@ fun VideoPlayer(
                 )
             }
         }
-
     }
 }

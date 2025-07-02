@@ -182,4 +182,22 @@
 
     <string name="file_op_open">打开</string>
     <string name="file_op_delete">删除</string>
+
+    <!-- SMB Credentials -->
+    <string name="smb_credentials">SMB 凭据</string>
+    <string name="username">用户名</string>
+    <string name="password_label">密码</string>
+    <string name="save_password">保存密码</string>
+    <string name="connect">连接</string>
+    <string name="auth_error">认证错误</string>
+    <string name="unknown_error">未知错误</string>
+    <string name="auto_connecting">正在自动连接…</string>
+    <string name="show_password">显示密码</string>
+    <string name="hide_password">隐藏密码</string>
+    
+    <!-- File Manager -->
+    <string name="local_file">本地文件</string>
+    <string name="network">网络</string>
+    <string name="app_file">应用文件</string>
+    <string name="downloads">下载</string>
 </resources>

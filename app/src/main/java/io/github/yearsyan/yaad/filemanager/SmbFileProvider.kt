@@ -3,6 +3,7 @@ package io.github.yearsyan.yaad.filemanager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.nsd.NsdServiceInfo
+import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
@@ -13,6 +14,9 @@ import java.time.format.DateTimeFormatter
 import java.util.Date
 import jcifs.CIFSContext
 import jcifs.smb.SmbFile
+import java.net.Inet4Address
+import java.net.Inet6Address
+import java.net.InetAddress
 
 class SmbEntryProvider() : IFileProvider<NsdServiceInfo> {
     override fun requestCreate(
@@ -20,6 +24,25 @@ class SmbEntryProvider() : IFileProvider<NsdServiceInfo> {
         onResult: (IFileNodeProvider) -> Unit
     ) {}
 }
+
+fun getSmbUrlFromAddresses(addresses: List<InetAddress>, port: Int): String? {
+    for (addressItem in addresses) {
+        Log.d("getSmbUrlFromAddresses", "addr: ${addressItem.hostAddress}")
+        val addressString = if (addressItem is Inet6Address)  {
+            "[${addressItem.hostAddress}]"
+        } else {
+            addressItem.hostAddress
+        }
+
+        val baseUrl = "smb://$addressString"
+        if (port != 445) {
+            return "$baseUrl:$port/"
+        }
+        return "$baseUrl/"
+    }
+    return null
+}
+
 
 class SmbFileProvider(
     private val file: SmbFile,
@@ -36,6 +59,7 @@ class SmbFileProvider(
 
     override val iconType: IconType
         get() = iconTypeInternal
+
     override val uri: Uri
         get() = Uri.parse(file.url.toString())
 
@@ -84,7 +108,7 @@ class SmbFileProvider(
     override fun listFiles(): List<IFileNodeProvider> {
         return file
             .listFiles()
-            .filter { !(isRoot && it.name == "IPC$/") }
+            .filter { it.name != "IPC$/" } // fixme
             .map { SmbFileProvider(it, context) }
     }
 

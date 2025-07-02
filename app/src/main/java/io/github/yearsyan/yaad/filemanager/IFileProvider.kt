@@ -18,6 +18,7 @@ interface IFileNodeProvider {
     val subTitle: String
     val iconType: IconType
         get() = IconType.DEFAULT
+
     val uri: Uri?
 
     val fileSize: Long

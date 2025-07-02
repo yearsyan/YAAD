@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
@@ -29,7 +30,7 @@ class PlayerActivity : ComponentActivity() {
 
     private fun createMediaItemFromIntent(): MediaItem? {
         val uri = intent.getStringExtra("video_uri")
-        if(uri?.isNotEmpty() == true) {
+        if (uri?.isNotEmpty() == true) {
             return MediaItem.fromUri(uri)
         }
         return null
@@ -69,14 +70,29 @@ class PlayerActivity : ComponentActivity() {
                 }
             }
         }
+
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    // fixme: 预测性返回
+                    if (isFullScreen.value) {
+                        isFullScreen.value = false
+                    } else {
+                        isEnabled = false
+                        this@PlayerActivity.onBackPressedDispatcher
+                            .onBackPressed()
+                        isEnabled = true
+                    }
+                }
+            }
+        )
     }
 
     private fun handleResultError() {
         setContent {
             YAADTheme {
-                Scaffold(
-                    contentColor = Color.Black
-                ) { innerPadding ->
+                Scaffold(contentColor = Color.Black) { innerPadding ->
                     Column(
                         modifier = Modifier.padding(innerPadding).fillMaxSize()
                     ) {
@@ -98,9 +114,10 @@ class PlayerActivity : ComponentActivity() {
 
     companion object {
         fun startWithUri(context: Context, uri: String) {
-            val intent = Intent(context, PlayerActivity::class.java).apply {
-                putExtra("video_uri", uri)
-            }
+            val intent =
+                Intent(context, PlayerActivity::class.java).apply {
+                    putExtra("video_uri", uri)
+                }
             context.startActivity(intent)
         }
     }

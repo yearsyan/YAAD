@@ -26,7 +26,7 @@ class DownloadsFileProvider(
 
     companion object {
         private const val DOWNLOADS_FOLDER_NAME = "Downloads"
-        
+
         fun createRootProvider(context: Context): DownloadsFileProvider {
             return DownloadsFileProvider(context)
         }
@@ -42,13 +42,15 @@ class DownloadsFileProvider(
         get() = uri?.toString() ?: "content://media/external/downloads"
 
     override val subTitle: String
-        get() = if (dateAdded > 0) {
-            val date = Date(dateAdded * 1000) // MediaStore 时间戳是秒
-            val formatter = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
-            formatter.format(date)
-        } else {
-            ""
-        }
+        get() =
+            if (dateAdded > 0) {
+                val date = Date(dateAdded * 1000) // MediaStore 时间戳是秒
+                val formatter =
+                    SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                formatter.format(date)
+            } else {
+                ""
+            }
 
     override val iconType: IconType
         get() = IconType.IMAGE_VECTOR
@@ -63,49 +65,57 @@ class DownloadsFileProvider(
 
         val contentResolver: ContentResolver = context.contentResolver
         val downloadsUri = MediaStore.Downloads.EXTERNAL_CONTENT_URI
-        
-        val projection = arrayOf(
-            MediaStore.Downloads._ID,
-            MediaStore.Downloads.DISPLAY_NAME,
-            MediaStore.Downloads.SIZE,
-            MediaStore.Downloads.DATE_ADDED,
-            MediaStore.Downloads.MIME_TYPE
-        )
-        
-        val sortOrder = "${MediaStore.Downloads.DATE_ADDED} DESC"
-        
-        val cursor = try {
-            contentResolver.query(
-                downloadsUri,
-                projection,
-                null,
-                null,
-                sortOrder
+
+        val projection =
+            arrayOf(
+                MediaStore.Downloads._ID,
+                MediaStore.Downloads.DISPLAY_NAME,
+                MediaStore.Downloads.SIZE,
+                MediaStore.Downloads.DATE_ADDED,
+                MediaStore.Downloads.MIME_TYPE
             )
-        } catch (e: SecurityException) {
-            // 权限不足时返回空列表
-            return emptyList()
-        }
+
+        val sortOrder = "${MediaStore.Downloads.DATE_ADDED} DESC"
+
+        val cursor =
+            try {
+                contentResolver.query(
+                    downloadsUri,
+                    projection,
+                    null,
+                    null,
+                    sortOrder
+                )
+            } catch (e: SecurityException) {
+                // 权限不足时返回空列表
+                return emptyList()
+            }
 
         val fileList = mutableListOf<IFileNodeProvider>()
-        
-        cursor?.use { 
+
+        cursor?.use {
             try {
-                val idColumn = it.getColumnIndexOrThrow(MediaStore.Downloads._ID)
-                val nameColumn = it.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME)
-                val sizeColumn = it.getColumnIndexOrThrow(MediaStore.Downloads.SIZE)
-                val dateAddedColumn = it.getColumnIndexOrThrow(MediaStore.Downloads.DATE_ADDED)
-                val mimeTypeColumn = it.getColumnIndexOrThrow(MediaStore.Downloads.MIME_TYPE)
-                
+                val idColumn =
+                    it.getColumnIndexOrThrow(MediaStore.Downloads._ID)
+                val nameColumn =
+                    it.getColumnIndexOrThrow(MediaStore.Downloads.DISPLAY_NAME)
+                val sizeColumn =
+                    it.getColumnIndexOrThrow(MediaStore.Downloads.SIZE)
+                val dateAddedColumn =
+                    it.getColumnIndexOrThrow(MediaStore.Downloads.DATE_ADDED)
+                val mimeTypeColumn =
+                    it.getColumnIndexOrThrow(MediaStore.Downloads.MIME_TYPE)
+
                 while (it.moveToNext()) {
                     val id = it.getLong(idColumn)
                     val name = it.getString(nameColumn)
                     val size = it.getLong(sizeColumn)
                     val dateAdded = it.getLong(dateAddedColumn)
                     val mimeType = it.getString(mimeTypeColumn)
-                    
-                    val fileUri = Uri.withAppendedPath(downloadsUri, id.toString())
-                    
+
+                    val fileUri =
+                        Uri.withAppendedPath(downloadsUri, id.toString())
+
                     fileList.add(
                         DownloadsFileProvider(
                             context = context,
@@ -122,7 +132,7 @@ class DownloadsFileProvider(
                 e.printStackTrace()
             }
         }
-        
+
         return fileList
     }
 
@@ -153,8 +163,10 @@ class DownloadsFileProvider(
             // 根据 MIME 类型返回不同的图标
             when {
                 mimeType?.startsWith("image/") == true -> Icons.Default.Image
-                mimeType?.startsWith("video/") == true -> Icons.Default.VideoFile
-                mimeType?.startsWith("audio/") == true -> Icons.Default.AudioFile
+                mimeType?.startsWith("video/") == true ->
+                    Icons.Default.VideoFile
+                mimeType?.startsWith("audio/") == true ->
+                    Icons.Default.AudioFile
                 else -> Icons.Default.FileCopy
             }
         }
@@ -169,9 +181,10 @@ class DownloadsFileProvider(
     }
 
     override fun rename(name: String) {
-        // MediaStore 不支持直接重命名，需要通过 ContentResolver 更新
         // 这里暂时抛出异常，实际使用时需要实现 ContentResolver 的更新逻辑
-        throw UnsupportedOperationException("Rename not supported for MediaStore downloads")
+        throw UnsupportedOperationException(
+            "Rename not supported for MediaStore downloads"
+        )
     }
 }
 
@@ -181,4 +194,4 @@ class DownloadsFileProvider(
 2. Android 13+ 需要 READ_MEDIA_* 权限
 3. 需要处理权限请求和异常情况
 4. MediaStore 操作是异步的，建议在后台线程中执行
-*/ 
+*/
