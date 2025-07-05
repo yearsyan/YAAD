@@ -3,12 +3,15 @@ package io.github.yearsyan.yaad
 import android.app.ActivityManager
 import android.app.Application
 import android.content.Context
+import coil3.ImageLoader
 import com.kongzue.dialogx.DialogX
 import com.kongzue.dialogx.dialogs.PopNotification
 import com.kongzue.dialogx.style.MaterialStyle
 import com.tencent.mmkv.MMKV
 import io.github.yaad.downloader_core.torrent.TorrentService
 import io.github.yearsyan.yaad.downloader.DownloadManager
+import io.github.yearsyan.yaad.filemanager.FileProviderIconFetcher
+import io.github.yearsyan.yaad.filemanager.IFileNodeProvider
 import io.github.yearsyan.yaad.services.ExtractorClient
 import io.github.yearsyan.yaad.utils.RepoRelease
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -18,6 +21,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class AppApplication : Application() {
+
+    lateinit var imageLoader: ImageLoader
+
     override fun onCreate() {
         super.onCreate()
         if (isMainProcess()) {
@@ -38,6 +44,12 @@ class AppApplication : Application() {
         ExtractorClient.getInstance().connect()
         DownloadManager.initByApplication(this)
         TorrentService.instance
+
+        imageLoader = ImageLoader.Builder(this)
+            .components {
+                add(FileProviderIconFetcher.Factory(), IFileNodeProvider::class)
+            }
+            .build()
     }
 
     @OptIn(DelicateCoroutinesApi::class)

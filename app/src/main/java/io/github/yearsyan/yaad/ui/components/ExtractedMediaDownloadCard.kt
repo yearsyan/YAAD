@@ -1,5 +1,6 @@
 package io.github.yearsyan.yaad.ui.components
 
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.FileOpen
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -59,18 +61,31 @@ import io.github.yearsyan.yaad.downloader.DownloadManager
 import io.github.yearsyan.yaad.utils.FormatUtils
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import java.io.File
+import java.net.URI
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CardBottomSheet(
+    onPlay: () -> Unit = {},
     onDismissRequest: () -> Unit,
     onRemove: () -> Unit = {},
-    onOpenFile: () -> Unit = {}
+    onOpenFile: () -> Unit = {},
+    onOpenFolder: () -> Unit = {}
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         containerColor = MaterialTheme.colorScheme.surface
     ) {
+        ListItem(
+            headlineContent = { Text(stringResource(R.string.button_play)) },
+            leadingContent = {
+                Icon(Icons.Default.PlayArrow, contentDescription = null)
+            },
+            modifier =
+                Modifier.clickable(onClick = onPlay)
+                    .background(MaterialTheme.colorScheme.surface)
+        )
         ListItem(
             headlineContent = { Text(stringResource(R.string.button_open)) },
             leadingContent = {
@@ -80,17 +95,17 @@ fun CardBottomSheet(
                 Modifier.clickable(onClick = onOpenFile)
                     .background(MaterialTheme.colorScheme.surface)
         )
-        ListItem(
-            headlineContent = {
-                Text(stringResource(R.string.popup_item_open_folder))
-            },
-            leadingContent = {
-                Icon(Icons.Default.FileOpen, contentDescription = null)
-            },
-            modifier =
-                Modifier.clickable(onClick = {})
-                    .background(MaterialTheme.colorScheme.surface)
-        )
+//        ListItem(
+//            headlineContent = {
+//                Text(stringResource(R.string.popup_item_open_folder))
+//            },
+//            leadingContent = {
+//                Icon(Icons.Default.Folder, contentDescription = null)
+//            },
+//            modifier =
+//                Modifier.clickable(onClick = onOpenFolder)
+//                    .background(MaterialTheme.colorScheme.surface)
+//        )
         ListItem(
             headlineContent = {
                 Text(
@@ -114,14 +129,15 @@ fun CardBottomSheet(
 
 @Composable
 fun ExtractedMediaDownloadCard(
-    scope: CoroutineScope,
+    onPlayMedia: (uri: Uri) -> Unit = {},
     record: DownloadManager.ExtractedMediaDownloadSessionRecord,
     modifier: Modifier = Modifier,
     onRemove:
         (DownloadManager.ExtractedMediaDownloadSessionRecord, Boolean) -> Unit =
         { _, _ ->
         },
-    onOpenFile: (filePath: String) -> Unit = {}
+    onOpenFile: (filePath: String) -> Unit = {},
+    onOpenFolder: (f: File) -> Unit = {}
 ) {
     // 获取实时状态
     val currentStatus by
@@ -152,6 +168,10 @@ fun ExtractedMediaDownloadCard(
 
     if (showPopup) {
         CardBottomSheet(
+            onPlay = {
+                val uri = Uri.fromFile(File(record.savePath))
+                onPlayMedia(uri)
+            },
             onDismissRequest = { showPopup = false },
             onRemove = {
                 showPopup = false
@@ -160,6 +180,14 @@ fun ExtractedMediaDownloadCard(
             onOpenFile = {
                 showPopup = false
                 onOpenFile(record.savePath)
+            },
+            onOpenFolder = {
+                File(record.savePath).parent?.let {
+                    val dir = File(it)
+                    if (dir.isDirectory) {
+                        onOpenFolder(dir)
+                    }
+                }
             }
         )
     }

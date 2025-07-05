@@ -6,6 +6,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.ui.graphics.vector.ImageVector
+import io.github.yearsyan.yaad.utils.FileUtils
+import io.github.yearsyan.yaad.utils.scaleBitmapToFit
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class LocalFileProvider(private val file: File) : IFileNodeProvider {
@@ -22,13 +26,19 @@ class LocalFileProvider(private val file: File) : IFileNodeProvider {
         get() = ""
 
     override val iconType: IconType
-        get() = IconType.IMAGE_VECTOR
+        get() {
+            if (FileUtils.isImageFile(name)) {
+                return IconType.FETCHER
+            }
+            return IconType.IMAGE_VECTOR
+        }
 
     override val uri: Uri
         get() = Uri.fromFile(file)
 
     override val fileSize: Long
         get() = file.length()
+
 
     override fun listFiles(): List<IFileNodeProvider> {
         val fileList = file.listFiles()
@@ -76,5 +86,14 @@ class LocalFileProvider(private val file: File) : IFileNodeProvider {
 
     override fun rename(name: String) {
         file.renameTo(File(file.parentFile, name))
+    }
+
+    override suspend fun fetchIcon(): Bitmap? {
+        return withContext(Dispatchers.Default) {
+            return@withContext FileUtils.fileToBitmap(file)?.let {
+                scaleBitmapToFit(it, 150, 150)
+            }
+        }
+        return null
     }
 }

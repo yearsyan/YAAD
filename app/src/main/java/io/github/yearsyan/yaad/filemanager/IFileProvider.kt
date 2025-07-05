@@ -8,6 +8,7 @@ enum class IconType {
     RES_ID,
     BITMAP,
     IMAGE_VECTOR,
+    FETCHER,
     DEFAULT
 }
 
@@ -42,6 +43,10 @@ interface IFileNodeProvider {
     fun getResIdIcon(): Int
 
     fun rename(name: String)
+
+    suspend fun fetchIcon(): Bitmap? {
+        return null
+    }
 }
 
 interface IFileProvider<T> {

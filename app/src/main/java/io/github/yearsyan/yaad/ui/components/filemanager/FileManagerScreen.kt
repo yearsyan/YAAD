@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,12 +53,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.kongzue.dialogx.dialogs.PopTip
+import io.github.yearsyan.yaad.AppApplication
 import io.github.yearsyan.yaad.R
 import io.github.yearsyan.yaad.filemanager.IFileNodeProvider
 import io.github.yearsyan.yaad.filemanager.IconType
@@ -74,31 +78,49 @@ import java.io.IOException
 
 @Composable
 fun FileIconImage(file: IFileNodeProvider, modifier: Modifier = Modifier) {
+
+    val context = LocalContext.current
+    var imageLoader = (context.applicationContext as AppApplication).imageLoader
+
+    val m = modifier.height(32.dp).aspectRatio(1.0f)
     when (file.iconType) {
         IconType.RES_ID -> {
             Image(
-                modifier = modifier.size(32.dp),
+                modifier = m,
+                contentScale = ContentScale.Crop,
                 painter = painterResource(id = file.getResIdIcon()),
                 contentDescription = file.name
             )
         }
         IconType.BITMAP -> {
             Image(
-                modifier = modifier.size(32.dp),
+                modifier = m,
+                contentScale = ContentScale.Crop,
                 bitmap = file.getBitmapIcon().asImageBitmap(),
                 contentDescription = file.name
             )
         }
         IconType.IMAGE_VECTOR -> {
             Image(
-                modifier = modifier.size(32.dp),
+                modifier = m,
+                contentScale = ContentScale.Crop,
                 imageVector = file.getImageVectorIcon(),
                 contentDescription = file.name
             )
         }
+        IconType.FETCHER -> {
+            AsyncImage(
+                modifier = m,
+                model = file,
+                contentScale = ContentScale.Crop,
+                imageLoader = imageLoader,
+                contentDescription = null
+            )
+        }
         IconType.DEFAULT -> {
             Image(
-                modifier = modifier.size(32.dp),
+                modifier = m,
+                contentScale = ContentScale.Crop,
                 imageVector = Icons.Default.FileOpen,
                 contentDescription = file.name
             )
@@ -435,13 +457,17 @@ fun FileList(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBarWithMenu() {
+fun TopBarWithMenu(onNewProvider: (() -> IFileNodeProvider) -> Unit = {}) {
     var expanded by remember { mutableStateOf(false) }
     var showAlert by remember { mutableStateOf(false) }
 
     if (showAlert) {
         ModalBottomSheet(onDismissRequest = { showAlert = false }) {
-            FileEntries()
+            FileEntries(onProvideSuccess = {
+                expanded = false
+                showAlert = false
+                onNewProvider(it)
+            })
         }
     }
 
@@ -483,7 +509,9 @@ fun FileManagerScreen(scope: CoroutineScope) {
     }
 
     Column {
-        TopBarWithMenu()
+        TopBarWithMenu {
+            providers.add(it)
+        }
         Row(modifier = Modifier.fillMaxWidth()) {
             if (providers.isEmpty()) {
                 FileEntries(modifier = Modifier.weight(1.0f).fillMaxHeight()) {

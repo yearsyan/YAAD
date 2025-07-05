@@ -1,29 +1,25 @@
 package io.github.yearsyan.yaad.filemanager
 
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
-import android.net.nsd.NsdServiceInfo
 import android.util.Log
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.ui.graphics.vector.ImageVector
+import io.github.yearsyan.yaad.utils.FileUtils
+import io.github.yearsyan.yaad.utils.scaleBitmapToFit
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
 import jcifs.CIFSContext
 import jcifs.smb.SmbFile
-import java.net.Inet4Address
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.net.Inet6Address
 import java.net.InetAddress
-
-class SmbEntryProvider() : IFileProvider<NsdServiceInfo> {
-    override fun requestCreate(
-        data: NsdServiceInfo,
-        onResult: (IFileNodeProvider) -> Unit
-    ) {}
-}
 
 fun getSmbUrlFromAddresses(addresses: List<InetAddress>, port: Int): String? {
     for (addressItem in addresses) {
@@ -56,6 +52,7 @@ class SmbFileProvider(
     private val imageVectorIcon: ImageVector?
     private val bitmapIcon: Bitmap? = null
     private val sizeInternal: Long
+    private val isDir: Boolean = file.isDirectory
 
     override val iconType: IconType
         get() = iconTypeInternal
@@ -67,7 +64,7 @@ class SmbFileProvider(
         get() = sizeInternal
 
     override val isDirectory: Boolean
-        get() = file.isDirectory
+        get() = isDir
 
     override val name: String
         get() = realName
@@ -87,7 +84,11 @@ class SmbFileProvider(
             } else {
                 n
             }
-        iconTypeInternal = IconType.IMAGE_VECTOR
+        var t = IconType.IMAGE_VECTOR
+        if (FileUtils.isImageFile(n)) {
+            t = IconType.FETCHER
+        }
+        iconTypeInternal = t
         imageVectorIcon =
             if (isDir) {
                 Icons.Default.Folder
@@ -152,5 +153,22 @@ class SmbFileProvider(
 
     override fun rename(name: String) {
         file.renameTo(SmbFile("${file.parent}${name}", context))
+    }
+
+    override suspend fun fetchIcon(): Bitmap? {
+        val data = withContext(Dispatchers.IO) {
+            try {
+                return@withContext file.openInputStream().readAllBytes()
+            } catch (e: Exception) {
+                return@withContext null
+            }
+        }
+        return data?.let {
+            withContext(Dispatchers.Default) {
+                return@withContext BitmapFactory.decodeByteArray(it, 0, it.size)?.let { res ->
+                    scaleBitmapToFit(res, 150, 150)
+                }
+            }
+        }
     }
 }

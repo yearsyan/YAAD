@@ -3,6 +3,8 @@ package io.github.yearsyan.yaad.utils
 import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -159,6 +161,28 @@ object FileUtils {
             "3gp",
             "ts" -> true
             else -> false
+        }
+    }
+
+    fun isImageFile(fileName: String): Boolean {
+        return when (fileName.substringAfterLast('.', "").lowercase()) {
+            "jpg",
+            "jpeg",
+            "png",
+            "webp",
+            "gif" -> true
+            else -> false
+        }
+    }
+
+    fun fileToBitmap(file: File): Bitmap? {
+        return try {
+            FileInputStream(file).use { inputStream ->
+                BitmapFactory.decodeStream(inputStream)
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
         }
     }
 }

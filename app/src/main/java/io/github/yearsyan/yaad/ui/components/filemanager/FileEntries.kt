@@ -266,14 +266,6 @@ fun FileEntries(
         }
     }
 
-    if (isAutoConnecting) {
-        // 可选：显示一个全局的加载提示
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(text = stringResource(R.string.auto_connecting))
-        }
-        return
-    }
-
     Column(
         modifier = modifier.padding(12.dp),
         horizontalAlignment = Alignment.Start
@@ -335,6 +327,9 @@ fun FileEntries(
                     smb.services.value.size
                 ) { index ->
                     FileEntryItem(smb.services.value[index].serviceName) {
+                        if (isAutoConnecting) {
+                            return@FileEntryItem
+                        }
                         tryAutoConnect(smb.services.value[index])
                     }
                 }
